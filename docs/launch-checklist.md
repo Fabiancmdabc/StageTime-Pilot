@@ -2,33 +2,31 @@
 
 Kostenloses Tool: Website, Downloads, Icon, Updates.
 
-## Erledigt in diesem Stand
+## Live
 
-- [x] Produkt-Homepage unter `Homepage/stagetime-pilot` (Next.js, Port 3002)
+- Homepage: https://stagetime-pilot.vercel.app
+- Download: https://stagetime-pilot.vercel.app/download
+- Version-API: https://stagetime-pilot.vercel.app/api/version
+- macOS DMG (GitHub Release): https://github.com/Fabiancmdabc/StageTime-Pilot/releases/tag/v1.0.0
+- tasty-world Tools-Link: https://tasty-world.com/#tools
+
+## Erledigt
+
+- [x] Produkt-Homepage (Next.js) + Deploy auf Vercel
 - [x] Download-Seite + `/api/version` für In-App-Check
-- [x] Link auf tasty-world.com Tools-Sektion (+ `site.tools.stageTimePilot`)
+- [x] macOS arm64 DMG/ZIP als GitHub Release v1.0.0
+- [x] Link auf tasty-world.com Tools-Sektion
 - [x] App-Icon (`build/icon.icns` / `build/icon.png`)
-- [x] In-App „Nach Updates suchen“ (Einstellungen)
+- [x] In-App „Nach Updates suchen“
 
-## Noch zu tun vor öffentlichem Launch
+## Noch offen / optional
 
-1. **Builds erzeugen**
-   - macOS: `npm run electron:build:mac` (idealerweise signiert + notarisiert)
-   - Windows: `npm run electron:build:win` (Code-Signing empfohlen)
-2. **Installer hochladen**
-   - Dateien nach `Homepage/stagetime-pilot/public/downloads/`
-   - Links in `src/lib/releases.ts` (`mac` / `win`) setzen
-3. **Website deployen**
-   - Vercel-Projekt z. B. `stagetime-pilot.vercel.app`
-   - Domain optional: `stagetime.tasty-world.com`
-4. **tasty-world deployen**
-   - damit der neue Tool-Block live ist
-5. **Optional später**
-   - Auto-Update via `electron-updater` + GitHub Releases
-   - Windows `.ico` aus dem PNG erzeugen
-   - App-Icon ohne Wordmark (nur ST-Emblem) feiner designen
-   - Screenshots auf der Homepage
-   - Impressum/Datenschutz-Seiten analog Cue-Pilot
+1. **Windows-Installer** (`npm run electron:build:win` auf Windows-Maschine) + Release-Asset + `releases.win`
+2. **macOS Notarisierung** (Apple Developer) — ohne Rechtsklick → Öffnen
+3. **Intel-Mac** Build (`--x64` / universal) falls nötig
+4. Auto-Update via `electron-updater`
+5. Screenshots / Impressum analog Cue-Pilot
+6. Optional Domain: `stagetime.tasty-world.com`
 
 ## Lokal starten
 
