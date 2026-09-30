@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>StageTime Remote</title>
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: transparent;
+        color: #fff;
+        font-family: "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+        overflow: hidden;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 4vw;
+        box-sizing: border-box;
+      }
+      #time {
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0.04em;
+        font-variant-numeric: tabular-nums;
+      }
+      #msg {
+        margin-top: 2vw;
+        max-width: 90%;
+        text-align: center;
+        font-weight: 500;
+      }
+      #status {
+        position: fixed;
+        top: 10px;
+        right: 12px;
+        font-size: 12px;
+        opacity: 0.45;
+      }
+      .blink { animation: blink 1s step-end infinite; }
+      @keyframes blink { 50% { opacity: 0.15; } }
+    </style>
+  </head>
+  <body>
+    <div id="status">connecting…</div>
+    <div id="root">
+      <div id="time">--:--</div>
+      <div id="msg"></div>
+    </div>
+    <script>
+      const elTime = document.getElementById('time')
+      const elMsg = document.getElementById('msg')
+      const elStatus = document.getElementById('status')
+      const elRoot = document.getElementById('root')
+      let state = null
+      let clockTimer = null
+
+      function pad(n) { return String(n).padStart(2, '0') }
+
+      function formatCountdown(ms, showSeconds) {
+        const overtime = ms < 0
+        const abs = Math.abs(ms)
+        const totalSec = Math.floor(abs / 1000)
+        const h = Math.floor(totalSec / 3600)
+        const m = Math.floor((totalSec % 3600) / 60)
+        const s = totalSec % 60
+        let body
+        if (h > 0) {
+          body = showSeconds ? h + ':' + pad(m) + ':' + pad(s) : h + ':' + pad(m)
+        } else {
+          body = showSeconds ? pad(m) + ':' + pad(s) : pad(m)
+        }
+        return overtime ? '+' + body : body
+      }
+
+      function formatClock(showSeconds) {
+        const now = new Date()
+        return showSeconds
+          ? pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds())
+          : pad(now.getHours()) + ':' + pad(now.getMinutes())
+      }
+
+      function phaseOf(s) {
+        if (s.mode === 'clock') return 'normal'
+        if (s.remainingMs < 0 || s.status === 'overtime') return 'overtime'
+        const remSec = s.remainingMs / 1000
+        if (remSec <= s.criticalAtSec) return 'critical'
+        if (remSec <= s.warnAtSec) return 'warn'
+        return 'normal'
+      }
+
+      function colorOf(s) {
+        const p = phaseOf(s)
+        if (p === 'warn') return s.visuals.warnColor
+        if (p === 'critical' || p === 'overtime') return s.visuals.criticalColor
+        return s.visuals.timeColor
+      }
+
+      function render() {
+        if (!state) return
+        const v = state.visuals
+        elRoot.style.background = v.backgroundColor || '#00b140'
+        elRoot.style.justifyContent =
+          v.verticalAlign === 'top' ? 'flex-start' : v.verticalAlign === 'bottom' ? 'flex-end' : 'center'
+        elRoot.style.alignItems =
+          v.textAlign === 'left' ? 'flex-start' : v.textAlign === 'right' ? 'flex-end' : 'center'
+
+        const color = colorOf(state)
+        const blink = phaseOf(state) === 'critical' || phaseOf(state) === 'overtime'
+        elTime.style.color = color
+        elTime.style.fontSize = (v.fontSizeVw || 22) + 'vw'
+        elTime.style.letterSpacing = (v.letterSpacingEm || 0.04) + 'em'
+        elTime.className = blink ? 'blink' : ''
+        elTime.textContent =
+          state.mode === 'clock'
+            ? formatClock(v.showSeconds)
+            : formatCountdown(state.remainingMs, v.showSeconds)
+
+        if (state.message && state.message.text) {
+          elMsg.style.display = 'block'
+          elMsg.style.color = v.messageColor
+          elMsg.style.fontSize = state.message.prominent ? '4vw' : '2.4vw'
+          elMsg.textContent = state.message.text
+        } else {
+          elMsg.style.display = 'none'
+          elMsg.textContent = ''
+        }
+      }
+
+      function apply(next) {
+        state = next
+        render()
+        if (clockTimer) clearInterval(clockTimer)
+        clockTimer = setInterval(render, 200)
+      }
+
+      function connect() {
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws'
+        const ws = new WebSocket(proto + '://' + location.host + '/ws')
+        ws.onopen = () => { elStatus.textContent = 'live' }
+        ws.onclose = () => {
+          elStatus.textContent = 'reconnect…'
+          setTimeout(connect, 1200)
+        }
+        ws.onmessage = (ev) => {
+          try {
+            const data = JSON.parse(ev.data)
+            if (data.type === 'state' && data.state) apply(data.state)
+          } catch (e) {}
+        }
+      }
+
+      connect()
+    </script>
+  </body>
+</html>
