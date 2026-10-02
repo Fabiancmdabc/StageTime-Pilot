@@ -3,7 +3,7 @@ export const UPDATE_FEED_URL =
   import.meta.env.VITE_UPDATE_FEED_URL ??
   'https://stagetime-pilot.vercel.app/api/version'
 
-export const APP_VERSION = '1.0.0'
+export const APP_VERSION = '1.0.1'
 
 export interface RemoteVersionInfo {
   name: string

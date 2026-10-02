@@ -1,7 +1,7 @@
 {
   "name": "stagetime-pilot",
   "productName": "StageTime-Pilot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "StageTime-Pilot – Redezeituhr für Veranstaltungen by Tasty-world",
   "author": "Fabian Maly",
   "private": true,
@@ -13,9 +13,9 @@
     "preview": "vite preview",
     "electron:dev": "concurrently -k \"npm run dev\" \"wait-on http://localhost:5174 && cross-env NODE_ENV=development electron .\"",
     "electron:build": "npm run build && electron-builder",
-    "electron:build:mac": "npm run build && electron-builder --mac",
-    "electron:build:win": "npm run build && electron-builder --win",
-    "electron:build:all": "npm run build && electron-builder --mac --win"
+    "electron:build:mac": "npm run build && electron-builder --mac --arm64",
+    "electron:build:win": "npm run build && electron-builder --win --x64",
+    "electron:build:all": "npm run build && electron-builder --mac --arm64 --win --x64"
   },
   "dependencies": {
     "@grandi/win32-x64": "^2.0.2",
@@ -23,6 +23,10 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "ws": "^8.18.3"
+  },
+  "optionalDependencies": {
+    "@grandi/darwin-arm64": "^2.0.2",
+    "@grandi/darwin-x64": "^2.0.2"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
@@ -41,37 +45,52 @@
   "build": {
     "appId": "com.tastyworld.stagetime-pilot",
     "productName": "StageTime-Pilot",
+    "compression": "maximum",
+    "removePackageScripts": true,
+    "afterPack": "build/afterPack.cjs",
     "files": [
-      "dist/**/*",
+      "dist/index.html",
+      "dist/assets/**/*",
+      "dist/brand/**/*",
       "electron/**/*",
-      "public/**/*"
+      "public/**/*",
+      "!**/*.{md,map}",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,readme.md,LICENSE,license}",
+      "!**/node_modules/.bin",
+      "!**/node_modules/@grandi/darwin-x64/**",
+      "!**/node_modules/@grandi/win32-x64/**"
     ],
     "asarUnpack": [
-      "node_modules/grandi/**",
-      "node_modules/@grandi/**"
+      "**/node_modules/grandi/**",
+      "**/node_modules/@grandi/darwin-arm64/**"
     ],
     "directories": {
-      "buildResources": "build"
+      "buildResources": "build",
+      "output": "release"
     },
     "mac": {
       "category": "public.app-category.utilities",
       "icon": "build/icon.icns",
       "target": [
-        "dmg",
-        "zip"
-      ]
+        "dmg"
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "extendInfo": {
+        "LSMinimumSystemVersion": "12.0",
+        "NSHighResolutionCapable": true
+      }
+    },
+    "dmg": {
+      "sign": false
     },
     "win": {
       "icon": "build/icon.ico",
       "target": [
         {
           "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
           "arch": [
             "x64"
           ]

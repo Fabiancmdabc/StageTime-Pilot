@@ -21,7 +21,7 @@ Kostenloses Tool: Website, Downloads, Icon, Updates.
 
 ## Noch offen / optional
 
-1. **Windows-Installer** (`npm run electron:build:win` auf Windows-Maschine) + Release-Asset + `releases.win`
+1. ~~Windows-Installer~~ → live als `StageTime-Pilot-1.0.0-Setup.exe`
 2. **macOS Notarisierung** (Apple Developer) — ohne Rechtsklick → Öffnen
 3. **Intel-Mac** Build (`--x64` / universal) falls nötig
 4. Auto-Update via `electron-updater`
