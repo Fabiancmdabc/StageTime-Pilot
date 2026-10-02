@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ControlApp } from './components/ControlApp'
 import { OutputApp } from './components/OutputApp'
+import { LocaleProvider } from './i18n'
 import { useTimerStore } from './store/timerStore'
 import './styles/app.css'
 
@@ -53,10 +54,18 @@ export default function App() {
     document.documentElement.classList.toggle('route-output', isOutput)
   }, [route])
 
-  if (route === 'show') return <OutputApp variant="show" />
-  if (route === 'output') return <OutputApp variant="output" />
-  if (route === 'pgm') return <OutputApp variant="pgm" />
-  if (route === 'remote') return <OutputApp variant="remote" />
+  const content =
+    route === 'show' ? (
+      <OutputApp variant="show" />
+    ) : route === 'output' ? (
+      <OutputApp variant="output" />
+    ) : route === 'pgm' ? (
+      <OutputApp variant="pgm" />
+    ) : route === 'remote' ? (
+      <OutputApp variant="remote" />
+    ) : (
+      <ControlApp {...store} />
+    )
 
-  return <ControlApp {...store} />
+  return <LocaleProvider>{content}</LocaleProvider>
 }

@@ -112,10 +112,12 @@ export const SYNC_CHANNEL = 'stagetime.pilot.sync.v1'
 export const STORAGE_KEY = 'stagetime.pilot.state.v1'
 export const API_STORAGE_KEY = 'stagetime.pilot.api.v1'
 export const THEME_STORAGE_KEY = 'stagetime.pilot.theme.v1'
+export const LOCALE_STORAGE_KEY = 'stagetime.pilot.locale.v1'
 export const SHOW_DISPLAYS_STORAGE_KEY = 'stagetime.pilot.showDisplays.v1'
 export const OUTPUT_STORAGE_KEY = 'stagetime.pilot.outputs.v1'
 
 export type UiTheme = 'dark' | 'light'
+export type UiLocale = 'de' | 'en'
 
 export interface OutputConfig {
   ndiEnabled: boolean

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useT } from '../i18n'
 
 interface Props {
   onSend: (text: string, seconds: number, prominent: boolean) => void
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function MessagePanel({ onSend, onClear, currentText }: Props) {
+  const t = useT()
   const [text, setText] = useState('')
   const [seconds, setSeconds] = useState(10)
   const [prominent, setProminent] = useState(false)
@@ -14,12 +16,12 @@ export function MessagePanel({ onSend, onClear, currentText }: Props) {
   return (
     <section className="panel">
       <header className="panel-header">
-        <h2>Nachricht / Hinweis</h2>
-        <p>Wird auf Show, PGM und Remote eingeblendet.</p>
+        <h2>{t('messageTitle')}</h2>
+        <p>{t('messageHint')}</p>
       </header>
 
       {currentText ? (
-        <div className="message-live">Aktiv: {currentText}</div>
+        <div className="message-live">{t('messageActive', { text: currentText })}</div>
       ) : null}
 
       <div className="inline-form">
@@ -27,7 +29,7 @@ export function MessagePanel({ onSend, onClear, currentText }: Props) {
           className="grow"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="z. B. Bitte zum Schluss kommen"
+          placeholder={t('messagePlaceholder')}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               onSend(text, seconds, prominent)
@@ -40,17 +42,17 @@ export function MessagePanel({ onSend, onClear, currentText }: Props) {
           min={0}
           value={seconds}
           onChange={(e) => setSeconds(Number(e.target.value))}
-          title="Anzeige in Sekunden (0 = dauerhaft)"
+          title={t('messageDurationTitle')}
           style={{ width: 72 }}
         />
-        <span>s</span>
+        <span>{t('sec')}</span>
         <label className="check-row compact">
           <input
             type="checkbox"
             checked={prominent}
             onChange={(e) => setProminent(e.target.checked)}
           />
-          Prominent
+          {t('prominent')}
         </label>
         <button
           type="button"
@@ -60,10 +62,10 @@ export function MessagePanel({ onSend, onClear, currentText }: Props) {
             setText('')
           }}
         >
-          Senden
+          {t('send')}
         </button>
         <button type="button" className="btn ghost" onClick={onClear}>
-          Clear
+          {t('clear')}
         </button>
       </div>
     </section>

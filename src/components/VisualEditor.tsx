@@ -1,3 +1,5 @@
+import { useT } from '../i18n'
+import type { MessageKey } from '../i18n/messages'
 import { CHROMA_PRESETS, type ShowVisuals } from '../types'
 
 interface Props {
@@ -5,38 +7,48 @@ interface Props {
   onChange: (patch: Partial<ShowVisuals>) => void
 }
 
+const CHROMA_LABEL_KEYS: Record<(typeof CHROMA_PRESETS)[number]['id'], MessageKey> = {
+  green: 'chromaGreen',
+  'green-pure': 'chromaGreenPure',
+  blue: 'chromaBlue',
+  magenta: 'chromaMagenta',
+  black: 'chromaBlack',
+}
+
 export function VisualEditor({ visuals, onChange }: Props) {
+  const t = useT()
+
   return (
     <section className="panel">
       <header className="panel-header">
-        <h2>Look / Show-Optik</h2>
-        <p>
-          Hintergrund als Chroma-Key (Greenscreen) für vMix/OBS – Key raus, nur
-          die Zeit bleibt als Overlay.
-        </p>
+        <h2>{t('lookTitle')}</h2>
+        <p>{t('lookHint')}</p>
       </header>
 
       <div className="chroma-block">
-        <span className="chroma-label">Chroma-Key / Hintergrund</span>
+        <span className="chroma-label">{t('chromaLabel')}</span>
         <div className="chroma-row">
-          {CHROMA_PRESETS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              className={`chroma-swatch ${
-                visuals.backgroundColor.toLowerCase() === p.color.toLowerCase()
-                  ? 'active'
-                  : ''
-              }`}
-              style={{ background: p.color }}
-              title={p.label}
-              onClick={() => onChange({ backgroundColor: p.color })}
-            >
-              <span>{p.label}</span>
-            </button>
-          ))}
+          {CHROMA_PRESETS.map((p) => {
+            const label = t(CHROMA_LABEL_KEYS[p.id])
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className={`chroma-swatch ${
+                  visuals.backgroundColor.toLowerCase() === p.color.toLowerCase()
+                    ? 'active'
+                    : ''
+                }`}
+                style={{ background: p.color }}
+                title={label}
+                onClick={() => onChange({ backgroundColor: p.color })}
+              >
+                <span>{label}</span>
+              </button>
+            )
+          })}
           <label className="chroma-custom">
-            Custom
+            {t('custom')}
             <input
               type="color"
               value={visuals.backgroundColor}
@@ -48,7 +60,7 @@ export function VisualEditor({ visuals, onChange }: Props) {
 
       <div className="form-grid">
         <label>
-          Zeitfarbe
+          {t('timeColor')}
           <input
             type="color"
             value={visuals.timeColor}
@@ -57,7 +69,7 @@ export function VisualEditor({ visuals, onChange }: Props) {
         </label>
 
         <label>
-          Gelb (Warnung)
+          {t('warnColor')}
           <input
             type="color"
             value={visuals.warnColor}
@@ -66,7 +78,7 @@ export function VisualEditor({ visuals, onChange }: Props) {
         </label>
 
         <label>
-          Rot (Kritisch)
+          {t('criticalColor')}
           <input
             type="color"
             value={visuals.criticalColor}
@@ -75,7 +87,7 @@ export function VisualEditor({ visuals, onChange }: Props) {
         </label>
 
         <label>
-          Nachrichtenfarbe
+          {t('messageColor')}
           <input
             type="color"
             value={visuals.messageColor}
@@ -84,7 +96,7 @@ export function VisualEditor({ visuals, onChange }: Props) {
         </label>
 
         <label>
-          Schriftgröße ({visuals.fontSizeVw}vw)
+          {t('fontSize', { n: visuals.fontSizeVw })}
           <input
             type="range"
             min={8}
@@ -96,7 +108,7 @@ export function VisualEditor({ visuals, onChange }: Props) {
         </label>
 
         <label>
-          Letter-Spacing ({visuals.letterSpacingEm.toFixed(2)}em)
+          {t('letterSpacing', { n: visuals.letterSpacingEm.toFixed(2) })}
           <input
             type="range"
             min={0}
@@ -115,11 +127,11 @@ export function VisualEditor({ visuals, onChange }: Props) {
             checked={visuals.showSeconds}
             onChange={(e) => onChange({ showSeconds: e.target.checked })}
           />
-          Sekunden anzeigen
+          {t('showSeconds')}
         </label>
 
         <label>
-          Horizontal
+          {t('horizontal')}
           <select
             value={visuals.textAlign}
             onChange={(e) =>
@@ -128,14 +140,14 @@ export function VisualEditor({ visuals, onChange }: Props) {
               })
             }
           >
-            <option value="left">Links</option>
-            <option value="center">Mitte</option>
-            <option value="right">Rechts</option>
+            <option value="left">{t('alignLeft')}</option>
+            <option value="center">{t('alignCenter')}</option>
+            <option value="right">{t('alignRight')}</option>
           </select>
         </label>
 
         <label>
-          Vertikal
+          {t('vertical')}
           <select
             value={visuals.verticalAlign}
             onChange={(e) =>
@@ -144,9 +156,9 @@ export function VisualEditor({ visuals, onChange }: Props) {
               })
             }
           >
-            <option value="top">Oben</option>
-            <option value="center">Mitte</option>
-            <option value="bottom">Unten</option>
+            <option value="top">{t('alignTop')}</option>
+            <option value="center">{t('alignCenter')}</option>
+            <option value="bottom">{t('alignBottom')}</option>
           </select>
         </label>
       </div>

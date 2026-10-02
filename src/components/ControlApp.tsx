@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useLocale } from '../i18n'
+import type { MessageKey } from '../i18n/messages'
 import type { ApiSettings, OutputConfig, OutputStatus, TimerState, UiTheme } from '../types'
 import {
   DEFAULT_OUTPUT_CONFIG,
@@ -79,6 +81,7 @@ function applyThemeToDom(theme: UiTheme) {
 
 export function ControlApp(store: StoreApi) {
   const { state, apiSettings } = store
+  const { locale, setLocale, t } = useLocale()
   const [durationMin, setDurationMin] = useState(
     Math.floor(state.durationMs / 60000),
   )
@@ -219,7 +222,10 @@ export function ControlApp(store: StoreApi) {
       checking: false,
       updateAvailable: result.updateAvailable,
       remote: result.remote,
-      error: result.error,
+      error:
+        result.error === 'invalidResponse'
+          ? t('invalidResponse')
+          : result.error,
     })
   }
 
@@ -244,48 +250,68 @@ export function ControlApp(store: StoreApi) {
             className={tab === 'run' ? 'active' : ''}
             onClick={() => setTab('run')}
           >
-            Timer
+            {t('tabTimer')}
           </button>
           <button
             type="button"
             className={tab === 'look' ? 'active' : ''}
             onClick={() => setTab('look')}
           >
-            Look
+            {t('tabLook')}
           </button>
           <button
             type="button"
             className={tab === 'remote' ? 'active' : ''}
             onClick={() => setTab('remote')}
           >
-            Remote
+            {t('tabRemote')}
           </button>
           <button
             type="button"
             className={tab === 'settings' ? 'active' : ''}
             onClick={() => setTab('settings')}
           >
-            Einstellungen
+            {t('tabSettings')}
           </button>
         </nav>
         <div className="window-actions">
+          <div className="lang-toggle" role="group" aria-label={t('langLabel')}>
+            <button
+              type="button"
+              className={locale === 'de' ? 'active' : ''}
+              title="Deutsch"
+              onClick={() => setLocale('de')}
+            >
+              <span className="flag flag-de" aria-hidden />
+              {t('langDe')}
+            </button>
+            <button
+              type="button"
+              className={locale === 'en' ? 'active' : ''}
+              title="English"
+              onClick={() => setLocale('en')}
+            >
+              <span className="flag flag-gb" aria-hidden />
+              {t('langEn')}
+            </button>
+          </div>
           <button
             type="button"
             className="btn ghost theme-toggle"
-            title={theme === 'dark' ? 'Hellmodus' : 'Dunkelmodus'}
-            onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+            title={theme === 'dark' ? t('themeLightTitle') : t('themeDarkTitle')}
+            onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
           >
-            {theme === 'dark' ? 'Hell' : 'Dunkel'}
+            {theme === 'dark' ? t('themeLight') : t('themeDark')}
           </button>
           <button type="button" className="btn secondary" onClick={() => void openShows()}>
-            Show öffnen
+            {t('openShow')}
           </button>
           <button
             type="button"
             className="btn secondary"
             onClick={() => void window.electronAPI?.openPgmWindow()}
           >
-            PGM öffnen
+            {t('openPgm')}
           </button>
         </div>
       </header>
@@ -293,13 +319,13 @@ export function ControlApp(store: StoreApi) {
       <main className="control-main">
         <aside className="preview-col">
           <div className="pgm-frame">
-            <div className="pgm-badge">PGM Preview</div>
+            <div className="pgm-badge">{t('pgmPreview')}</div>
             <ShowDisplay state={state} compact />
           </div>
-          <div className={`status-pill phase-${phase}`}>{phaseLabel(phase)}</div>
+          <div className={`status-pill phase-${phase}`}>{phaseLabel(phase, t)}</div>
           {selectedDisplayIds.length > 0 && (
             <div className="hint">
-              Show-Displays: {selectedDisplayIds.length} ausgewählt
+              {t('showDisplaysSelected', { n: selectedDisplayIds.length })}
             </div>
           )}
         </aside>
@@ -314,14 +340,14 @@ export function ControlApp(store: StoreApi) {
                     className={state.mode === 'countdown' ? 'active' : ''}
                     onClick={() => store.setMode('countdown')}
                   >
-                    Countdown
+                    {t('modeCountdown')}
                   </button>
                   <button
                     type="button"
                     className={state.mode === 'clock' ? 'active' : ''}
                     onClick={() => store.setMode('clock')}
                   >
-                    Uhrzeit
+                    {t('modeClock')}
                   </button>
                 </div>
 
@@ -334,31 +360,31 @@ export function ControlApp(store: StoreApi) {
                 <div className="transport">
                   {!running ? (
                     <button type="button" className="btn primary large" onClick={store.start}>
-                      Start
+                      {t('start')}
                     </button>
                   ) : (
                     <button type="button" className="btn warn large" onClick={store.pause}>
-                      Pause
+                      {t('pause')}
                     </button>
                   )}
                   <button type="button" className="btn secondary large" onClick={store.reset}>
-                    Reset
+                    {t('reset')}
                   </button>
                   <button type="button" className="btn ghost large" onClick={store.stop}>
-                    Stop
+                    {t('stop')}
                   </button>
                 </div>
 
                 {state.mode === 'countdown' && (
                   <div className="inline-form duration-form">
-                    <span>Dauer</span>
+                    <span>{t('duration')}</span>
                     <input
                       type="number"
                       min={0}
                       value={durationMin}
                       onChange={(e) => setDurationMin(Number(e.target.value))}
                     />
-                    <span>min</span>
+                    <span>{t('min')}</span>
                     <input
                       type="number"
                       min={0}
@@ -366,7 +392,7 @@ export function ControlApp(store: StoreApi) {
                       value={durationSec}
                       onChange={(e) => setDurationSec(Number(e.target.value))}
                     />
-                    <span>s</span>
+                    <span>{t('sec')}</span>
                     <button
                       type="button"
                       className="btn secondary"
@@ -374,7 +400,7 @@ export function ControlApp(store: StoreApi) {
                         store.setDuration(durationMin * 60 + durationSec, false)
                       }
                     >
-                      Setzen
+                      {t('set')}
                     </button>
                     <button
                       type="button"
@@ -383,14 +409,14 @@ export function ControlApp(store: StoreApi) {
                         store.setDuration(durationMin * 60 + durationSec, true)
                       }
                     >
-                      Setzen & Start
+                      {t('setAndStart')}
                     </button>
                   </div>
                 )}
 
                 <div className="inline-form thresholds">
                   <label>
-                    Gelb ab (s)
+                    {t('warnAt')}
                     <input
                       type="number"
                       min={0}
@@ -399,7 +425,7 @@ export function ControlApp(store: StoreApi) {
                     />
                   </label>
                   <label>
-                    Rot blinken ab (s)
+                    {t('criticalAt')}
                     <input
                       type="number"
                       min={0}
@@ -412,7 +438,7 @@ export function ControlApp(store: StoreApi) {
                     className="btn secondary"
                     onClick={() => store.setThresholds(warnAt, criticalAt)}
                   >
-                    Schwellen speichern
+                    {t('saveThresholds')}
                   </button>
                 </div>
               </section>
@@ -439,11 +465,8 @@ export function ControlApp(store: StoreApi) {
           {tab === 'remote' && (
             <section className="panel">
               <header className="panel-header">
-                <h2>Remote / iPad</h2>
-                <p>
-                  Zeitanzeige im Browser über WLAN und HTTP-Steuerung für Cue-Pilot /
-                  Companion.
-                </p>
+                <h2>{t('remoteTitle')}</h2>
+                <p>{t('remoteHint')}</p>
               </header>
 
               <div className="form-grid">
@@ -458,11 +481,11 @@ export function ControlApp(store: StoreApi) {
                       })
                     }
                   />
-                  API / Remote-Server aktiv
+                  {t('apiEnabled')}
                 </label>
 
                 <label>
-                  Port
+                  {t('port')}
                   <input
                     type="number"
                     min={1024}
@@ -478,11 +501,11 @@ export function ControlApp(store: StoreApi) {
                 </label>
 
                 <label>
-                  Token (optional)
+                  {t('tokenOptional')}
                   <input
                     type="text"
                     value={apiSettings.token}
-                    placeholder="leer = ohne Auth"
+                    placeholder={t('tokenPlaceholder')}
                     onChange={(e) =>
                       store.setApiSettings({
                         ...apiSettings,
@@ -497,19 +520,16 @@ export function ControlApp(store: StoreApi) {
                   className="btn primary"
                   onClick={() => void window.electronAPI?.setApiConfig(apiSettings)}
                 >
-                  Server neu starten
+                  {t('restartServer')}
                 </button>
               </div>
 
               <div className="remote-urls">
-                <h3>Remote-URLs (WLAN / iPad)</h3>
+                <h3>{t('remoteUrls')}</h3>
                 {remoteUrls.map((url) => (
                   <code key={url}>{url}</code>
                 ))}
-                <p className="hint">
-                  Auf dem iPad dieselbe WLAN-Adresse im Safari öffnen. Live-Sync per
-                  WebSocket.
-                </p>
+                <p className="hint">{t('remoteUrlsHint')}</p>
               </div>
             </section>
           )}
@@ -518,17 +538,12 @@ export function ControlApp(store: StoreApi) {
             <>
             <section className="panel">
               <header className="panel-header">
-                <h2>Ausgabe · Displays</h2>
-                <p>
-                  Mehrere Monitore auswählen – „Show öffnen“ startet auf allen
-                  markierten Displays gleichzeitig.
-                </p>
+                <h2>{t('displaysTitle')}</h2>
+                <p>{t('displaysHint')}</p>
               </header>
 
               {displays.length === 0 ? (
-                <p className="hint">
-                  Keine Display-Infos (nur in der Desktop-App verfügbar).
-                </p>
+                <p className="hint">{t('noDisplays')}</p>
               ) : (
                 <div className="display-list">
                   {displays.map((d) => {
@@ -543,13 +558,13 @@ export function ControlApp(store: StoreApi) {
                         <div>
                           <strong>
                             {d.label}
-                            {d.primary ? ' · Primär' : ''}
+                            {d.primary ? t('primary') : ''}
                           </strong>
                           <span>
                             {d.size.width}×{d.size.height}
                             {d.scaleFactor !== 1 ? ` @${d.scaleFactor}x` : ''}
                             {' · '}
-                            Position {d.bounds.x},{d.bounds.y}
+                            {t('position')} {d.bounds.x},{d.bounds.y}
                           </span>
                         </div>
                       </label>
@@ -560,14 +575,14 @@ export function ControlApp(store: StoreApi) {
 
               <div className="inline-form" style={{ marginTop: '1rem' }}>
                 <button type="button" className="btn primary" onClick={() => void openShows()}>
-                  Show auf Auswahl öffnen
+                  {t('openShowsOnSelection')}
                 </button>
                 <button
                   type="button"
                   className="btn ghost"
                   onClick={() => void window.electronAPI?.closeShowWindow()}
                 >
-                  Alle Shows schließen
+                  {t('closeAllShows')}
                 </button>
               </div>
             </section>
@@ -583,34 +598,59 @@ export function ControlApp(store: StoreApi) {
 
             <section className="panel">
               <header className="panel-header">
-                <h2>Darstellung</h2>
-                <p>Oberfläche der Control-App (Show-Fenster bleibt eigenständig).</p>
+                <h2>{t('appearanceTitle')}</h2>
+                <p>{t('appearanceHint')}</p>
               </header>
-              <div className="mode-toggle">
-                <button
-                  type="button"
-                  className={theme === 'dark' ? 'active' : ''}
-                  onClick={() => setTheme('dark')}
-                >
-                  Dunkel
-                </button>
-                <button
-                  type="button"
-                  className={theme === 'light' ? 'active' : ''}
-                  onClick={() => setTheme('light')}
-                >
-                  Hell
-                </button>
+              <div className="settings-toggles">
+                <div>
+                  <span className="chroma-label">{t('language')}</span>
+                  <div className="lang-toggle" role="group" aria-label={t('langLabel')}>
+                    <button
+                      type="button"
+                      className={locale === 'de' ? 'active' : ''}
+                      title="Deutsch"
+                      onClick={() => setLocale('de')}
+                    >
+                      <span className="flag flag-de" aria-hidden />
+                      {t('langDe')}
+                    </button>
+                    <button
+                      type="button"
+                      className={locale === 'en' ? 'active' : ''}
+                      title="English"
+                      onClick={() => setLocale('en')}
+                    >
+                      <span className="flag flag-gb" aria-hidden />
+                      {t('langEn')}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <span className="chroma-label">{t('theme')}</span>
+                  <div className="mode-toggle">
+                    <button
+                      type="button"
+                      className={theme === 'dark' ? 'active' : ''}
+                      onClick={() => setTheme('dark')}
+                    >
+                      {t('themeDark')}
+                    </button>
+                    <button
+                      type="button"
+                      className={theme === 'light' ? 'active' : ''}
+                      onClick={() => setTheme('light')}
+                    >
+                      {t('themeLight')}
+                    </button>
+                  </div>
+                </div>
               </div>
             </section>
 
             <section className="panel">
               <header className="panel-header">
-                <h2>Updates</h2>
-                <p>
-                  Installierte Version {APP_VERSION}. Prüft die öffentliche
-                  Website-API.
-                </p>
+                <h2>{t('updatesTitle')}</h2>
+                <p>{t('updatesHint', { version: APP_VERSION })}</p>
               </header>
               <div className="inline-form">
                 <button
@@ -619,11 +659,11 @@ export function ControlApp(store: StoreApi) {
                   disabled={updateInfo.checking}
                   onClick={() => void runUpdateCheck()}
                 >
-                  {updateInfo.checking ? 'Prüfe…' : 'Nach Updates suchen'}
+                  {updateInfo.checking ? t('checking') : t('checkUpdates')}
                 </button>
                 {updateInfo.updateAvailable && updateInfo.remote ? (
                   <span className="hint" style={{ color: 'var(--teal)' }}>
-                    Neu: v{updateInfo.remote.version}
+                    {t('updateAvailable', { version: updateInfo.remote.version })}
                     {updateInfo.remote.notes ? ` — ${updateInfo.remote.notes}` : ''}
                   </span>
                 ) : null}
@@ -631,7 +671,7 @@ export function ControlApp(store: StoreApi) {
                 updateInfo.remote &&
                 !updateInfo.updateAvailable &&
                 !updateInfo.error ? (
-                  <span className="hint">Du bist auf dem neuesten Stand.</span>
+                  <span className="hint">{t('upToDate')}</span>
                 ) : null}
                 {updateInfo.error ? (
                   <span className="hint error-hint">{updateInfo.error}</span>
@@ -639,7 +679,7 @@ export function ControlApp(store: StoreApi) {
               </div>
               {updateInfo.updateAvailable ? (
                 <p className="hint" style={{ marginTop: '0.75rem' }}>
-                  Download:{' '}
+                  {t('download')}{' '}
                   <a
                     href="https://stagetime-pilot.vercel.app/download"
                     target="_blank"
@@ -659,16 +699,16 @@ export function ControlApp(store: StoreApi) {
   )
 }
 
-function phaseLabel(phase: string) {
+function phaseLabel(phase: string, t: (key: MessageKey) => string) {
   switch (phase) {
     case 'warn':
-      return 'Gelb'
+      return t('phaseWarn')
     case 'critical':
-      return 'Rot blinkt'
+      return t('phaseCritical')
     case 'overtime':
-      return 'Overtime'
+      return t('phaseOvertime')
     default:
-      return 'Normal'
+      return t('phaseNormal')
   }
 }
 

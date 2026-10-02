@@ -154,6 +154,84 @@ select {
   min-width: 4.5rem;
 }
 
+.lang-toggle {
+  display: inline-flex;
+  gap: 0.2rem;
+  background: var(--panel-2);
+  border-radius: 999px;
+  padding: 0.18rem;
+  border: 1px solid var(--line);
+}
+
+.lang-toggle button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.lang-toggle button.active {
+  background: color-mix(in srgb, var(--teal) 18%, transparent);
+  color: var(--teal);
+}
+
+.flag {
+  width: 1.1rem;
+  height: 0.75rem;
+  border-radius: 2px;
+  display: inline-block;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 18%, transparent);
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+
+.flag-de {
+  background-image: linear-gradient(
+    to bottom,
+    #000 0 33.33%,
+    #dd0000 33.33% 66.66%,
+    #ffce00 66.66% 100%
+  );
+}
+
+.flag-gb {
+  background-color: #012169;
+  background-image:
+    linear-gradient(to bottom, transparent 40%, #fff 40% 60%, transparent 60%),
+    linear-gradient(to right, transparent 40%, #fff 40% 60%, transparent 60%),
+    linear-gradient(to bottom, transparent 42%, #c8102e 42% 58%, transparent 58%),
+    linear-gradient(to right, transparent 42%, #c8102e 42% 58%, transparent 58%),
+    linear-gradient(60deg, transparent 46%, #fff 46% 54%, transparent 54%),
+    linear-gradient(-60deg, transparent 46%, #fff 46% 54%, transparent 54%),
+    linear-gradient(60deg, transparent 48%, #c8102e 48% 52%, transparent 52%),
+    linear-gradient(-60deg, transparent 48%, #c8102e 48% 52%, transparent 52%);
+}
+
+.settings-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 2rem;
+}
+
+.settings-toggles > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.settings-toggles .mode-toggle {
+  margin-bottom: 0;
+}
+
 .control-main {
   display: grid;
   grid-template-columns: minmax(280px, 420px) 1fr;

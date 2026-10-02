@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useT } from '../i18n'
 import type { TimePreset } from '../types'
 
 interface Props {
@@ -9,15 +10,16 @@ interface Props {
 }
 
 export function PresetsPanel({ presets, onApply, onAdd, onRemove }: Props) {
-  const [label, setLabel] = useState('Custom')
+  const t = useT()
+  const [label, setLabel] = useState(t('custom'))
   const [minutes, setMinutes] = useState(5)
   const [seconds, setSeconds] = useState(0)
 
   return (
     <section className="panel">
       <header className="panel-header">
-        <h2>Schnellwahl</h2>
-        <p>Vorkonfigurierte Redezeiten – ein Klick setzt die Dauer (ohne Start).</p>
+        <h2>{t('presetsTitle')}</h2>
+        <p>{t('presetsHint')}</p>
       </header>
 
       <div className="preset-row">
@@ -30,7 +32,7 @@ export function PresetsPanel({ presets, onApply, onAdd, onRemove }: Props) {
             <button
               type="button"
               className="preset-remove"
-              title="Entfernen"
+              title={t('remove')}
               onClick={() => onRemove(p.id)}
             >
               ×
@@ -43,25 +45,25 @@ export function PresetsPanel({ presets, onApply, onAdd, onRemove }: Props) {
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
-          placeholder="Label"
+          placeholder={t('label')}
         />
         <input
           type="number"
           min={0}
           value={minutes}
           onChange={(e) => setMinutes(Number(e.target.value))}
-          title="Minuten"
+          title={t('minutes')}
         />
-        <span>min</span>
+        <span>{t('min')}</span>
         <input
           type="number"
           min={0}
           max={59}
           value={seconds}
           onChange={(e) => setSeconds(Number(e.target.value))}
-          title="Sekunden"
+          title={t('seconds')}
         />
-        <span>s</span>
+        <span>{t('sec')}</span>
         <button
           type="button"
           className="btn secondary"
@@ -71,7 +73,7 @@ export function PresetsPanel({ presets, onApply, onAdd, onRemove }: Props) {
             onAdd(label.trim(), total, false)
           }}
         >
-          Hinzufügen
+          {t('add')}
         </button>
       </div>
     </section>

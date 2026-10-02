@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { TimerState } from '../types'
 import { DEFAULT_TIMER_STATE } from '../types'
+import { useT } from '../i18n'
 import { useTimerStore } from '../store/timerStore'
 import { ShowDisplay } from './ShowDisplay'
 
@@ -9,6 +10,7 @@ export function OutputApp({
 }: {
   variant: 'show' | 'pgm' | 'remote' | 'output'
 }) {
+  const t = useT()
   const store = useTimerStore({ master: false })
   const [remoteState, setRemoteState] = useState<TimerState | null>(null)
 
@@ -68,7 +70,7 @@ export function OutputApp({
         <button
           type="button"
           className="show-close-btn"
-          title="Show schließen (Esc)"
+          title={t('closeShowTitle')}
           onClick={() => void window.electronAPI?.closeFocusedShowWindow()}
         >
           ×

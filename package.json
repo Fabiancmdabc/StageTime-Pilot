@@ -1,7 +1,7 @@
 {
   "name": "stagetime-pilot",
   "productName": "StageTime-Pilot",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "StageTime-Pilot – Redezeituhr für Veranstaltungen by Tasty-world",
   "author": "Fabian Maly",
   "private": true,
@@ -48,6 +48,7 @@
     "compression": "maximum",
     "removePackageScripts": true,
     "afterPack": "build/afterPack.cjs",
+    "afterSign": "build/notarize.cjs",
     "files": [
       "dist/index.html",
       "dist/assets/**/*",

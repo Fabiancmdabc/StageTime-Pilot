@@ -1,3 +1,4 @@
+import { useT } from '../i18n'
 import type { OutputConfig, OutputStatus } from '../types'
 
 interface Props {
@@ -7,14 +8,16 @@ interface Props {
   onApply: () => void
 }
 
-function badge(ch: { enabled: boolean; sending: boolean; error?: string | null }) {
-  if (ch.error && ch.enabled) return { cls: 'err', text: 'Fehler' }
-  if (ch.sending) return { cls: 'on', text: 'sendet' }
-  if (ch.enabled) return { cls: 'wait', text: 'startet…' }
-  return { cls: 'off', text: 'aus' }
-}
-
 export function OutputsPanel({ config, status, onChange, onApply }: Props) {
+  const t = useT()
+
+  const badge = (ch: { enabled: boolean; sending: boolean; error?: string | null }) => {
+    if (ch.error && ch.enabled) return { cls: 'err', text: t('statusError') }
+    if (ch.sending) return { cls: 'on', text: t('statusSending') }
+    if (ch.enabled) return { cls: 'wait', text: t('statusStarting') }
+    return { cls: 'off', text: t('statusOff') }
+  }
+
   const ndi = badge(status?.ndi ?? { enabled: config.ndiEnabled, sending: false })
   const rtmp = badge(status?.rtmp ?? { enabled: config.rtmpEnabled, sending: false })
   const udp = badge(status?.udp ?? { enabled: config.udpEnabled, sending: false })
@@ -22,11 +25,8 @@ export function OutputsPanel({ config, status, onChange, onApply }: Props) {
   return (
     <section className="panel">
       <header className="panel-header">
-        <h2>Ausgabe · NDI / RTMP / UDP</h2>
-        <p>
-          Show ohne HDMI: vMix/OBS holen das Signal übers Netz. Chroma-Key aus
-          Look bleibt erhalten.
-        </p>
+        <h2>{t('outputsTitle')}</h2>
+        <p>{t('outputsHint')}</p>
       </header>
 
       <div className="output-card">
@@ -42,7 +42,7 @@ export function OutputsPanel({ config, status, onChange, onApply }: Props) {
           <span className={`out-badge ${ndi.cls}`}>{ndi.text}</span>
         </div>
         <label>
-          Source-Name
+          {t('sourceName')}
           <input
             type="text"
             value={config.ndiName}
@@ -53,10 +53,9 @@ export function OutputsPanel({ config, status, onChange, onApply }: Props) {
           <p className="hint error-hint">{status.ndi.error}</p>
         ) : (
           <p className="hint">
-            In vMix/OBS als NDI-Quelle „{config.ndiName}“ wählen. NDI Runtime auf
-            dem Mac empfohlen.
+            {t('ndiHint', { name: config.ndiName })}
             {status?.ndi.connections
-              ? ` Empfänger: ${status.ndi.connections}`
+              ? t('receivers', { n: status.ndi.connections })
               : ''}
           </p>
         )}
@@ -75,7 +74,7 @@ export function OutputsPanel({ config, status, onChange, onApply }: Props) {
           <span className={`out-badge ${rtmp.cls}`}>{rtmp.text}</span>
         </div>
         <label>
-          URL
+          {t('url')}
           <input
             type="text"
             value={config.rtmpUrl}
@@ -86,9 +85,7 @@ export function OutputsPanel({ config, status, onChange, onApply }: Props) {
         {status?.rtmp.error && config.rtmpEnabled ? (
           <p className="hint error-hint">{status.rtmp.error}</p>
         ) : (
-          <p className="hint">
-            Braucht ffmpeg im PATH (Homebrew). OBS: Media Source / Custom RTMP.
-          </p>
+          <p className="hint">{t('rtmpHint')}</p>
         )}
       </div>
 
@@ -105,7 +102,7 @@ export function OutputsPanel({ config, status, onChange, onApply }: Props) {
           <span className={`out-badge ${udp.cls}`}>{udp.text}</span>
         </div>
         <label>
-          Ziel
+          {t('target')}
           <input
             type="text"
             value={config.udpUrl}
@@ -116,18 +113,18 @@ export function OutputsPanel({ config, status, onChange, onApply }: Props) {
         {status?.udp.error && config.udpEnabled ? (
           <p className="hint error-hint">{status.udp.error}</p>
         ) : (
-          <p className="hint">ffmpeg MPEG-TS über UDP (LAN-Decoder / Pipelines).</p>
+          <p className="hint">{t('udpHint')}</p>
         )}
       </div>
 
       <div className="inline-form" style={{ marginTop: '0.75rem' }}>
         <button type="button" className="btn primary" onClick={onApply}>
-          Ausgaben übernehmen
+          {t('applyOutputs')}
         </button>
         {status?.capturing ? (
-          <span className="hint">Capture 1920×1080 @ {config.fps} fps aktiv</span>
+          <span className="hint">{t('captureActive', { fps: config.fps })}</span>
         ) : (
-          <span className="hint">Capture startet, sobald ein Ausgang an ist.</span>
+          <span className="hint">{t('captureIdle')}</span>
         )}
       </div>
     </section>

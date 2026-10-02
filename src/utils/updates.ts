@@ -3,7 +3,7 @@ export const UPDATE_FEED_URL =
   import.meta.env.VITE_UPDATE_FEED_URL ??
   'https://stagetime-pilot.vercel.app/api/version'
 
-export const APP_VERSION = '1.0.1'
+export const APP_VERSION = '1.0.2'
 
 export interface RemoteVersionInfo {
   name: string
@@ -44,7 +44,7 @@ export async function checkForUpdates(
     }
     const remote = (await res.json()) as RemoteVersionInfo
     if (!remote?.version) {
-      return { updateAvailable: false, remote: null, error: 'ungültige Antwort' }
+      return { updateAvailable: false, remote: null, error: 'invalidResponse' }
     }
     return {
       updateAvailable: isNewerVersion(remote.version, APP_VERSION),
