@@ -12,6 +12,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const isDev = process.env.NODE_ENV === 'development'
 const DEV_URL = 'http://localhost:5174'
 
+app.setName('StageTime-Pilot')
+app.setPath('userData', path.join(app.getPath('appData'), 'StageTime-Pilot'))
+
 let controlWindow = null
 /** @type {Map<number, import('electron').BrowserWindow>} */
 const showWindows = new Map()

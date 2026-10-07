@@ -3,6 +3,7 @@ import {
   API_STORAGE_KEY,
   DEFAULT_API_SETTINGS,
   DEFAULT_TIMER_STATE,
+  MESSAGE_MAX_CHARS,
   STORAGE_KEY,
   SYNC_CHANNEL,
   type ApiSettings,
@@ -277,7 +278,7 @@ export function useTimerStore(options: { master?: boolean } = {}) {
 
   const sendMessage = useCallback((text: string, seconds = 0, prominent = false) => {
     if (!isMaster) return
-    const trimmed = text.trim()
+    const trimmed = text.trim().slice(0, MESSAGE_MAX_CHARS)
     if (!trimmed) {
       emit({ ...masterState, message: null, updatedAt: Date.now() })
       return

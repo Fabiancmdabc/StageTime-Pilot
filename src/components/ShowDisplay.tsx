@@ -47,7 +47,24 @@ export function ShowDisplay({ state, label, compact }: Props) {
     fontFamily: visuals.fontFamily,
     overflow: 'hidden',
     position: 'relative',
+    ...(compact ? { containerType: 'size' } : {}),
   }
+
+  // Breite steuern, Höhe begrenzen – verhindert Überlauf bei großen Werten
+  const timeSize = compact
+    ? `min(${visuals.fontSizeVw}cqw, 72cqh)`
+    : `min(${visuals.fontSizeVw}vw, 72vh)`
+
+  const messageSize = compact ? 'min(3.2cqw, 8cqh)' : 'min(3.2vw, 8vh)'
+
+  const letter = `${visuals.letterSpacingEm}em`
+  // letter-spacing hängt rechts „Leerraum“ an → optisch nach links verschoben
+  const letterFix =
+    visuals.textAlign === 'center'
+      ? ({ marginRight: `-${letter}` } as CSSProperties)
+      : visuals.textAlign === 'right'
+        ? ({ marginRight: `-${letter}` } as CSSProperties)
+        : {}
 
   return (
     <div className={`show-display ${blink ? 'is-blinking' : ''}`} style={rootStyle}>
@@ -55,10 +72,12 @@ export function ShowDisplay({ state, label, compact }: Props) {
       <div
         className="show-time"
         style={{
-          fontSize: compact ? '4rem' : `${visuals.fontSizeVw}vw`,
-          letterSpacing: `${visuals.letterSpacingEm}em`,
+          fontSize: timeSize,
+          letterSpacing: letter,
+          ...letterFix,
           lineHeight: 1,
           fontWeight: 700,
+          fontVariantNumeric: 'tabular-nums',
           textAlign: visuals.textAlign,
           color,
         }}
@@ -67,20 +86,14 @@ export function ShowDisplay({ state, label, compact }: Props) {
       </div>
       {message?.text ? (
         <div
-          className={`show-message ${message.prominent ? 'is-prominent' : ''}`}
+          className="show-message"
           style={{
             color: visuals.messageColor,
             textAlign: visuals.textAlign,
             marginTop: compact ? '0.75rem' : '2vw',
-            fontSize: message.prominent
-              ? compact
-                ? '1.4rem'
-                : '4vw'
-              : compact
-                ? '1rem'
-                : '2.4vw',
+            fontSize: messageSize,
             maxWidth: '90%',
-            fontWeight: message.prominent ? 700 : 500,
+            fontWeight: 600,
           }}
         >
           {message.text}

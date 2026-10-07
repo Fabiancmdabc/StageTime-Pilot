@@ -96,13 +96,13 @@ export function VisualEditor({ visuals, onChange }: Props) {
         </label>
 
         <label>
-          {t('fontSize', { n: visuals.fontSizeVw })}
+          {t('fontSize', { n: Math.min(35, Math.max(5, visuals.fontSizeVw)) })}
           <input
             type="range"
-            min={8}
-            max={40}
+            min={5}
+            max={35}
             step={1}
-            value={visuals.fontSizeVw}
+            value={Math.min(35, Math.max(5, visuals.fontSizeVw))}
             onChange={(e) => onChange({ fontSizeVw: Number(e.target.value) })}
           />
         </label>

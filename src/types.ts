@@ -32,6 +32,9 @@ export interface ShowMessage {
   expiresAt: number | null
 }
 
+/** Overlay-Nachricht: kurz halten, damit sie unter der Zeit lesbar bleibt. */
+export const MESSAGE_MAX_CHARS = 250
+
 export interface TimerState {
   mode: TimerMode
   status: TimerStatus

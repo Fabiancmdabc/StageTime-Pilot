@@ -49,11 +49,9 @@ export const de = {
   custom: 'Custom',
 
   messageTitle: 'Nachricht / Hinweis',
-  messageHint: 'Wird auf Show, PGM und Remote eingeblendet.',
+  messageHint: 'Wird auf Show, PGM und Remote eingeblendet. Bleibt bis Clear (max. 250 Zeichen).',
   messageActive: 'Aktiv: {text}',
   messagePlaceholder: 'z. B. Bitte zum Schluss kommen',
-  messageDurationTitle: 'Anzeige in Sekunden (0 = dauerhaft)',
-  prominent: 'Prominent',
   send: 'Senden',
   clear: 'Clear',
 
@@ -70,7 +68,7 @@ export const de = {
   warnColor: 'Gelb (Warnung)',
   criticalColor: 'Rot (Kritisch)',
   messageColor: 'Nachrichtenfarbe',
-  fontSize: 'Schriftgröße ({n}vw)',
+  fontSize: 'Schriftgröße ({n})',
   letterSpacing: 'Letter-Spacing ({n}em)',
   showSeconds: 'Sekunden anzeigen',
   horizontal: 'Horizontal',
@@ -186,11 +184,9 @@ export const en: Record<MessageKey, string> = {
   custom: 'Custom',
 
   messageTitle: 'Message / cue',
-  messageHint: 'Shown on Show, PGM and Remote.',
+  messageHint: 'Shown on Show, PGM and Remote. Stays until Clear (max. 250 characters).',
   messageActive: 'Active: {text}',
   messagePlaceholder: 'e.g. Please wrap up',
-  messageDurationTitle: 'Display seconds (0 = persistent)',
-  prominent: 'Prominent',
   send: 'Send',
   clear: 'Clear',
 
@@ -207,7 +203,7 @@ export const en: Record<MessageKey, string> = {
   warnColor: 'Yellow (warn)',
   criticalColor: 'Red (critical)',
   messageColor: 'Message color',
-  fontSize: 'Font size ({n}vw)',
+  fontSize: 'Font size ({n})',
   letterSpacing: 'Letter spacing ({n}em)',
   showSeconds: 'Show seconds',
   horizontal: 'Horizontal',

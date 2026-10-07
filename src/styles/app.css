@@ -429,6 +429,20 @@ select {
   padding: 0.45rem 0.6rem;
 }
 
+.form-grid input[type='range'] {
+  width: 100%;
+  padding: 0.4rem 0;
+  background: transparent;
+  border: 0;
+  accent-color: var(--teal);
+}
+
+.form-grid input[type='color'] {
+  min-height: 2.25rem;
+  padding: 0.2rem;
+  cursor: pointer;
+}
+
 .inline-form input[type='number'] {
   width: 72px;
 }
@@ -740,23 +754,35 @@ select {
   animation: blink 1s step-end infinite;
 }
 
-.show-message.is-prominent {
-  animation: pulse 1.4s ease-in-out infinite;
+.show-message {
+  animation: message-fade-blink 1.5s ease-in-out infinite;
+}
+
+@keyframes message-fade-blink {
+  0%,
+  58% {
+    opacity: 1;
+  }
+  72%,
+  84% {
+    opacity: 0;
+  }
+  98%,
+  100% {
+    opacity: 1;
+  }
+}
+
+.char-count {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  min-width: 3.2rem;
 }
 
 @keyframes blink {
   50% {
     opacity: 0.15;
-  }
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.55;
   }
 }
 
