@@ -7,8 +7,15 @@ import {
   OUTPUT_STORAGE_KEY,
   SHOW_DISPLAYS_STORAGE_KEY,
   THEME_STORAGE_KEY,
+  UPDATE_DOWNLOAD_URL,
 } from '../types'
-import { APP_VERSION, checkForUpdates, type RemoteVersionInfo } from '../utils/updates'
+import {
+  APP_VERSION,
+  checkForUpdates,
+  dismissUpdate,
+  isUpdateDismissed,
+  type RemoteVersionInfo,
+} from '../utils/updates'
 import { formatCountdown, getPhase } from '../utils/time'
 import { MessagePanel } from './MessagePanel'
 import { OutputsPanel } from './OutputsPanel'
@@ -107,6 +114,7 @@ export function ControlApp(store: StoreApi) {
     remote: RemoteVersionInfo | null
     error?: string
   }>({ checking: false, updateAvailable: false, remote: null })
+  const [updateBanner, setUpdateBanner] = useState<RemoteVersionInfo | null>(null)
 
   useEffect(() => {
     applyThemeToDom(theme)
@@ -187,6 +195,24 @@ export function ControlApp(store: StoreApi) {
     setDurationSec(Math.floor((state.durationMs % 60000) / 1000))
   }, [state.durationMs])
 
+  // Stiller Update-Check beim Start – Banner nur bei neuer Version
+  useEffect(() => {
+    let cancelled = false
+    void checkForUpdates().then((result) => {
+      if (cancelled || !result.updateAvailable || !result.remote) return
+      if (isUpdateDismissed(result.remote.version)) return
+      setUpdateBanner(result.remote)
+      setUpdateInfo((s) => ({
+        ...s,
+        updateAvailable: true,
+        remote: result.remote,
+      }))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const remoteUrls = useMemo(() => {
     const hosts = addresses.length ? addresses : ['127.0.0.1']
     return hosts.map((ip) => {
@@ -227,6 +253,18 @@ export function ControlApp(store: StoreApi) {
           ? t('invalidResponse')
           : result.error,
     })
+    if (result.updateAvailable && result.remote) {
+      setUpdateBanner(result.remote)
+    }
+  }
+
+  const openUpdateDownload = () => {
+    window.open(UPDATE_DOWNLOAD_URL, '_blank', 'noopener,noreferrer')
+  }
+
+  const dismissUpdateBanner = () => {
+    if (updateBanner?.version) dismissUpdate(updateBanner.version)
+    setUpdateBanner(null)
   }
 
   const openShows = async () => {
@@ -236,6 +274,36 @@ export function ControlApp(store: StoreApi) {
 
   return (
     <div className="control-shell">
+      {updateBanner ? (
+        <div className="update-banner" role="status">
+          <div className="update-banner-copy">
+            <strong>
+              {t('updateBannerTitle', { version: updateBanner.version })}
+            </strong>
+            <span>
+              {updateBanner.notes?.trim()
+                ? updateBanner.notes
+                : t('updateBannerBody')}
+            </span>
+          </div>
+          <div className="update-banner-actions">
+            <button
+              type="button"
+              className="btn primary"
+              onClick={openUpdateDownload}
+            >
+              {t('updateBannerDownload')}
+            </button>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={dismissUpdateBanner}
+            >
+              {t('updateBannerLater')}
+            </button>
+          </div>
+        </div>
+      ) : null}
       <header className="topbar">
         <div className="brand">
           <img

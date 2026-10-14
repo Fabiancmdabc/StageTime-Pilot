@@ -1,9 +1,14 @@
+import { UPDATE_DISMISS_KEY } from '../types'
+
 /** Update-Check gegen die öffentliche Version-API der Website. */
 export const UPDATE_FEED_URL =
   import.meta.env.VITE_UPDATE_FEED_URL ??
   'https://stagetime-pilot.vercel.app/api/version'
 
-export const APP_VERSION = '1.0.2'
+export const APP_VERSION = '1.0.3'
+
+/** „Später“: dieselbe Version max. 24 h nicht erneut als Banner zeigen. */
+const DISMISS_TTL_MS = 24 * 60 * 60 * 1000
 
 export interface RemoteVersionInfo {
   name: string
@@ -56,5 +61,28 @@ export async function checkForUpdates(
       remote: null,
       error: String(err instanceof Error ? err.message : err),
     }
+  }
+}
+
+export function isUpdateDismissed(version: string): boolean {
+  try {
+    const raw = localStorage.getItem(UPDATE_DISMISS_KEY)
+    if (!raw) return false
+    const parsed = JSON.parse(raw) as { version?: string; at?: number }
+    if (parsed.version !== version || !parsed.at) return false
+    return Date.now() - parsed.at < DISMISS_TTL_MS
+  } catch {
+    return false
+  }
+}
+
+export function dismissUpdate(version: string) {
+  try {
+    localStorage.setItem(
+      UPDATE_DISMISS_KEY,
+      JSON.stringify({ version, at: Date.now() }),
+    )
+  } catch {
+    /* ignore */
   }
 }

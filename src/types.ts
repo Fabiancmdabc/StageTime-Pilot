@@ -118,6 +118,9 @@ export const THEME_STORAGE_KEY = 'stagetime.pilot.theme.v1'
 export const LOCALE_STORAGE_KEY = 'stagetime.pilot.locale.v1'
 export const SHOW_DISPLAYS_STORAGE_KEY = 'stagetime.pilot.showDisplays.v1'
 export const OUTPUT_STORAGE_KEY = 'stagetime.pilot.outputs.v1'
+/** Merkt „Später“ für eine Remote-Version (still genug, keine Dauer-Popups). */
+export const UPDATE_DISMISS_KEY = 'stagetime.pilot.updateDismiss.v1'
+export const UPDATE_DOWNLOAD_URL = 'https://stagetime-pilot.vercel.app/download'
 
 export type UiTheme = 'dark' | 'light'
 export type UiLocale = 'de' | 'en'

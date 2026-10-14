@@ -112,6 +112,10 @@ export const de = {
   upToDate: 'Du bist auf dem neuesten Stand.',
   download: 'Download:',
   invalidResponse: 'ungültige Antwort',
+  updateBannerTitle: 'Update verfügbar: v{version}',
+  updateBannerBody: 'Eine neue Version von StageTime-Pilot ist bereit.',
+  updateBannerDownload: 'Download öffnen',
+  updateBannerLater: 'Später',
 
   outputsTitle: 'Ausgabe · NDI / RTMP / UDP',
   outputsHint:
@@ -246,6 +250,10 @@ export const en: Record<MessageKey, string> = {
   upToDate: 'You’re up to date.',
   download: 'Download:',
   invalidResponse: 'invalid response',
+  updateBannerTitle: 'Update available: v{version}',
+  updateBannerBody: 'A new version of StageTime-Pilot is ready.',
+  updateBannerDownload: 'Open download',
+  updateBannerLater: 'Later',
 
   outputsTitle: 'Output · NDI / RTMP / UDP',
   outputsHint:

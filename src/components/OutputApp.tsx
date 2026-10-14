@@ -76,10 +76,7 @@ export function OutputApp({
           ×
         </button>
       ) : null}
-      <ShowDisplay
-        state={state}
-        label={variant === 'pgm' ? 'PGM' : undefined}
-      />
+      <ShowDisplay state={state} />
     </div>
   )
 }

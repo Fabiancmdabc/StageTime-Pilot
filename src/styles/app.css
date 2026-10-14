@@ -88,17 +88,64 @@ select {
   flex-direction: column;
 }
 
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.7rem 1.25rem;
+  background: color-mix(in srgb, var(--teal) 16%, var(--panel));
+  border-bottom: 1px solid color-mix(in srgb, var(--teal) 35%, var(--line));
+}
+
+.update-banner-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.update-banner-copy strong {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.update-banner-copy span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.update-banner-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .topbar {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.85rem 1.25rem;
+  /* Links Platz für macOS Traffic Lights (titleBarStyle: hiddenInset) */
+  padding: 0.85rem 1.25rem 0.85rem 78px;
   border-bottom: 1px solid var(--line);
   background: var(--topbar-bg);
   backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
   z-index: 10;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.topbar button,
+.topbar input,
+.topbar a,
+.topbar .tabs,
+.topbar .window-actions,
+.topbar .lang-toggle {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
 }
 
 .brand {
@@ -298,21 +345,30 @@ select {
 }
 
 .panel {
-  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 1rem 1.15rem 1.15rem;
 }
 
+.panel-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.9rem;
+}
+
 .panel-header h2 {
   margin: 0;
   font-size: 1.05rem;
+  line-height: 1.3;
 }
 
 .panel-header p {
-  margin: 0.25rem 0 0.9rem;
+  margin: 0;
   color: var(--muted);
   font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .hero-timer {
@@ -481,6 +537,7 @@ select {
 }
 
 .check-row {
+  display: flex;
   flex-direction: row !important;
   align-items: center;
   gap: 0.5rem !important;
@@ -568,15 +625,27 @@ select {
   padding: 0.85rem;
   margin-bottom: 0.75rem;
   background: var(--panel-2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
 }
 
-.output-card label {
+.output-card > label:not(.check-row) {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
   font-size: 0.85rem;
   color: var(--muted);
-  margin-top: 0.5rem;
+  margin: 0;
+}
+
+.output-card input[type='text'] {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
 }
 
 .output-head {
@@ -584,6 +653,23 @@ select {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+}
+
+.output-head .check-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
 }
 
 .out-badge {

@@ -15,6 +15,16 @@ const DEV_URL = 'http://localhost:5174'
 app.setName('StageTime-Pilot')
 app.setPath('userData', path.join(app.getPath('appData'), 'StageTime-Pilot'))
 
+function applyDockIcon() {
+  if (process.platform !== 'darwin' || !app.dock) return
+  const iconPath = path.join(__dirname, '../build/icon.png')
+  try {
+    app.dock.setIcon(iconPath)
+  } catch (err) {
+    console.warn('dock icon failed', err)
+  }
+}
+
 let controlWindow = null
 /** @type {Map<number, import('electron').BrowserWindow>} */
 const showWindows = new Map()
@@ -66,6 +76,9 @@ function createControlWindow() {
     minHeight: 680,
     backgroundColor: '#12151a',
     title: 'StageTime-Pilot',
+    // Keine separate macOS-Titelleiste mit App-Namen – Traffic Lights sitzen im Topbar
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 16, y: 18 },
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -192,6 +205,9 @@ function createPgmWindow() {
     height: 540,
     backgroundColor: '#000000',
     title: 'StageTime-Pilot PGM',
+    // Reines Preview-Fenster: kein Frame, kein Titeltext
+    frame: false,
+    titleBarStyle: 'hidden',
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -353,6 +369,7 @@ ipcMain.on('api-query-reply', (_e, requestId, data) => {
 })
 
 app.whenReady().then(async () => {
+  applyDockIcon()
   selectedDisplayIds = [screen.getPrimaryDisplay().id]
   outputManager = createOutputManager({
     resolveHtml,
