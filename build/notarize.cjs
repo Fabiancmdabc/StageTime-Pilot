@@ -26,11 +26,28 @@ exports.default = async function notarizing(context) {
   const appPath = path.join(context.appOutDir, `${appName}.app`);
 
   console.log(`[notarize] starte Notarisierung für ${appPath}`);
-  await notarize({
-    appPath,
-    appleId,
-    appleIdPassword,
-    teamId,
-  });
-  console.log("[notarize] fertig");
+
+  // Staple kann bei Netzwerkfehlern (CloudKit -1005) fehlschlagen —
+  // Notarize inkl. Staple mit kurzen Retries.
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await notarize({
+        appPath,
+        appleId,
+        appleIdPassword,
+        teamId,
+      });
+      console.log("[notarize] fertig");
+      return;
+    } catch (err) {
+      lastError = err;
+      const msg = err?.message || String(err);
+      console.warn(`[notarize] Versuch ${attempt}/3 fehlgeschlagen: ${msg}`);
+      if (attempt < 3) {
+        await new Promise((r) => setTimeout(r, 5000 * attempt));
+      }
+    }
+  }
+  throw lastError;
 };
