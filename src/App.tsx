@@ -41,7 +41,7 @@ export default function App() {
       route === 'show'
         ? 'StageTime Show'
         : route === 'pgm'
-          ? 'StageTime PGM'
+          ? ''
           : route === 'remote'
             ? 'StageTime Remote'
             : route === 'output'

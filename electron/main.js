@@ -216,15 +216,18 @@ function createPgmWindow() {
     width: 960,
     height: 540,
     backgroundColor: '#000000',
-    title: 'StageTime-Pilot PGM',
-    // Reines Preview-Fenster: kein Frame, kein Titeltext
+    title: '',
+    // Komplett frameless: kein Titelstreifen, keine system-Ampeln
     frame: false,
-    titleBarStyle: 'hidden',
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
+  })
+
+  pgmWindow.on('page-title-updated', (event) => {
+    event.preventDefault()
   })
 
   pgmWindow.loadURL(resolveHtml('#pgm'))
@@ -338,6 +341,10 @@ ipcMain.handle('focus-control-window', async () => {
 
 ipcMain.handle('close-pgm-window', async () => {
   if (pgmWindow && !pgmWindow.isDestroyed()) pgmWindow.close()
+})
+
+ipcMain.handle('minimize-pgm-window', async () => {
+  if (pgmWindow && !pgmWindow.isDestroyed()) pgmWindow.minimize()
 })
 
 ipcMain.handle('get-local-addresses', async () => getLocalAddresses())

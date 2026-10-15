@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   closeFocusedShowWindow: () => ipcRenderer.invoke('close-focused-show-window'),
   focusControlWindow: () => ipcRenderer.invoke('focus-control-window'),
   closePgmWindow: () => ipcRenderer.invoke('close-pgm-window'),
+  minimizePgmWindow: () => ipcRenderer.invoke('minimize-pgm-window'),
   getDisplays: () => ipcRenderer.invoke('get-displays'),
   getSelectedShowDisplays: () => ipcRenderer.invoke('get-selected-show-displays'),
   setSelectedShowDisplays: (displayIds) =>

@@ -35,6 +35,7 @@ interface StageTimeElectronAPI {
   closeFocusedShowWindow: () => Promise<{ ok: boolean }>
   focusControlWindow: () => Promise<void>
   closePgmWindow: () => Promise<void>
+  minimizePgmWindow: () => Promise<void>
   getDisplays: () => Promise<DisplayInfo[]>
   getSelectedShowDisplays: () => Promise<number[]>
   setSelectedShowDisplays: (

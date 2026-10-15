@@ -13,6 +13,7 @@ export function OutputApp({
   const t = useT()
   const store = useTimerStore({ master: false })
   const [remoteState, setRemoteState] = useState<TimerState | null>(null)
+  const [pgmChromeVisible, setPgmChromeVisible] = useState(false)
 
   useEffect(() => {
     if (variant !== 'show') return
@@ -23,6 +24,21 @@ export function OutputApp({
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
+  }, [variant])
+
+  useEffect(() => {
+    if (variant !== 'pgm') return
+    let hideTimer = 0
+    const reveal = () => {
+      setPgmChromeVisible(true)
+      window.clearTimeout(hideTimer)
+      hideTimer = window.setTimeout(() => setPgmChromeVisible(false), 1600)
+    }
+    window.addEventListener('mousemove', reveal)
+    return () => {
+      window.removeEventListener('mousemove', reveal)
+      window.clearTimeout(hideTimer)
+    }
   }, [variant])
 
   useEffect(() => {
@@ -65,7 +81,30 @@ export function OutputApp({
   const state = variant === 'remote' ? remoteState ?? DEFAULT_TIMER_STATE : store.state
 
   return (
-    <div className={`output-root output-${variant}`}>
+    <div
+      className={`output-root output-${variant}${
+        variant === 'pgm' && pgmChromeVisible ? ' pgm-chrome-on' : ''
+      }`}
+    >
+      {variant === 'pgm' ? (
+        <>
+          <div className="pgm-drag-region" aria-hidden />
+          <div className="pgm-window-chrome" role="toolbar" aria-label="PGM">
+            <button
+              type="button"
+              className="pgm-win-btn pgm-win-close"
+              title={t('closePgmTitle')}
+              onClick={() => void window.electronAPI?.closePgmWindow()}
+            />
+            <button
+              type="button"
+              className="pgm-win-btn pgm-win-min"
+              title={t('minimizePgmTitle')}
+              onClick={() => void window.electronAPI?.minimizePgmWindow()}
+            />
+          </div>
+        </>
+      ) : null}
       {variant === 'show' ? (
         <button
           type="button"

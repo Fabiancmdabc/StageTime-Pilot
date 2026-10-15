@@ -151,6 +151,8 @@ export const de = {
   captureIdle: 'Capture startet, sobald ein Ausgang an ist.',
 
   closeShowTitle: 'Show schließen (Esc)',
+  closePgmTitle: 'PGM schließen',
+  minimizePgmTitle: 'PGM minimieren',
 } as const
 
 export const en: Record<MessageKey, string> = {
@@ -302,6 +304,8 @@ export const en: Record<MessageKey, string> = {
   captureIdle: 'Capture starts once an output is on.',
 
   closeShowTitle: 'Close Show (Esc)',
+  closePgmTitle: 'Close PGM',
+  minimizePgmTitle: 'Minimize PGM',
 }
 
 export const catalogs = { de, en } as const
