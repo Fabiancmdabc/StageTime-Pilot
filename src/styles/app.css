@@ -126,7 +126,7 @@ select {
   display: flex;
   align-items: center;
   gap: 1rem;
-  /* Links Platz für macOS Traffic Lights (titleBarStyle: hiddenInset) */
+  /* Links Platz für macOS Traffic Lights (titleBarStyle: hidden) */
   padding: 0.85rem 1.25rem 0.85rem 78px;
   border-bottom: 1px solid var(--line);
   background: var(--topbar-bg);

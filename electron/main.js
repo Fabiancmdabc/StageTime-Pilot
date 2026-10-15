@@ -76,14 +76,19 @@ function createControlWindow() {
     minHeight: 680,
     backgroundColor: '#12151a',
     title: 'StageTime-Pilot',
-    // Keine separate macOS-Titelleiste mit App-Namen – Traffic Lights sitzen im Topbar
-    titleBarStyle: 'hiddenInset',
+    // hidden (nicht hiddenInset): kein nativer Fenstertitel-Text über den Traffic Lights
+    titleBarStyle: 'hidden',
     trafficLightPosition: { x: 16, y: 18 },
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
+  })
+
+  // document.title soll den nativen Titel nicht wieder einblenden
+  controlWindow.on('page-title-updated', (event) => {
+    event.preventDefault()
   })
 
   controlWindow.loadURL(resolveHtml('#control'))
