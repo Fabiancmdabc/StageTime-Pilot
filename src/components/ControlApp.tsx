@@ -7,7 +7,6 @@ import {
   OUTPUT_STORAGE_KEY,
   SHOW_DISPLAYS_STORAGE_KEY,
   THEME_STORAGE_KEY,
-  UPDATE_DOWNLOAD_URL,
 } from '../types'
 import {
   APP_VERSION,
@@ -115,6 +114,8 @@ export function ControlApp(store: StoreApi) {
     error?: string
   }>({ checking: false, updateAvailable: false, remote: null })
   const [updateBanner, setUpdateBanner] = useState<RemoteVersionInfo | null>(null)
+  const [updateInstalling, setUpdateInstalling] = useState(false)
+  const [updateInstallError, setUpdateInstallError] = useState<string | null>(null)
 
   useEffect(() => {
     applyThemeToDom(theme)
@@ -258,8 +259,58 @@ export function ControlApp(store: StoreApi) {
     }
   }
 
-  const openUpdateDownload = () => {
-    window.open(UPDATE_DOWNLOAD_URL, '_blank', 'noopener,noreferrer')
+  const platformDownloadUrl = (remote: RemoteVersionInfo | null) => {
+    if (!remote?.downloads) return null
+    const platform = window.electronAPI?.platform ?? 'darwin'
+    if (platform === 'darwin') return remote.downloads.mac || null
+    if (platform === 'win32') return remote.downloads.win || null
+    return remote.downloads.mac || remote.downloads.win || null
+  }
+
+  const startUpdateInstall = async (remote: RemoteVersionInfo) => {
+    const downloadUrl = platformDownloadUrl(remote)
+    if (!downloadUrl) {
+      setUpdateInstallError(t('updateNoDownloadUrl'))
+      return
+    }
+    if (!window.electronAPI?.installUpdate) {
+      window.open(downloadUrl, '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    setUpdateInstallError(null)
+    setUpdateInstalling(true)
+    try {
+      const platform = window.electronAPI.platform ?? 'darwin'
+      const result = await window.electronAPI.installUpdate({
+        version: remote.version,
+        downloadUrl,
+        confirmTitle: t('updateConfirmTitle'),
+        confirmMessage: t('updateConfirmMessage', { version: remote.version }),
+        confirmDetail: t('updateConfirmDetail'),
+        confirmOk: t('updateConfirmOk'),
+        confirmCancel: t('updateConfirmCancel'),
+        doneTitle: t('updateDoneTitle'),
+        doneMessage:
+          platform === 'win32' ? t('updateDoneMessageWin') : t('updateDoneMessageMac'),
+      })
+      if (result?.cancelled) return
+      if (!result?.ok) {
+        setUpdateInstallError(
+          t('updateInstallFailed', { error: result?.error || 'unknown' }),
+        )
+        return
+      }
+      setUpdateBanner(null)
+    } catch (err) {
+      setUpdateInstallError(
+        t('updateInstallFailed', {
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      )
+    } finally {
+      setUpdateInstalling(false)
+    }
   }
 
   const dismissUpdateBanner = () => {
@@ -274,36 +325,6 @@ export function ControlApp(store: StoreApi) {
 
   return (
     <div className="control-shell">
-      {updateBanner ? (
-        <div className="update-banner" role="status">
-          <div className="update-banner-copy">
-            <strong>
-              {t('updateBannerTitle', { version: updateBanner.version })}
-            </strong>
-            <span>
-              {updateBanner.notes?.trim()
-                ? updateBanner.notes
-                : t('updateBannerBody')}
-            </span>
-          </div>
-          <div className="update-banner-actions">
-            <button
-              type="button"
-              className="btn primary"
-              onClick={openUpdateDownload}
-            >
-              {t('updateBannerDownload')}
-            </button>
-            <button
-              type="button"
-              className="btn ghost"
-              onClick={dismissUpdateBanner}
-            >
-              {t('updateBannerLater')}
-            </button>
-          </div>
-        </div>
-      ) : null}
       <header className="topbar">
         <div className="brand">
           <img
@@ -383,6 +404,42 @@ export function ControlApp(store: StoreApi) {
           </button>
         </div>
       </header>
+
+      {updateBanner ? (
+        <div className="update-banner" role="status">
+          <div className="update-banner-copy">
+            <strong>
+              {t('updateBannerTitle', { version: updateBanner.version })}
+            </strong>
+            <span>
+              {updateBanner.notes?.trim()
+                ? updateBanner.notes
+                : t('updateBannerBody')}
+            </span>
+            {updateInstallError ? (
+              <span className="hint error-hint">{updateInstallError}</span>
+            ) : null}
+          </div>
+          <div className="update-banner-actions">
+            <button
+              type="button"
+              className="btn primary"
+              disabled={updateInstalling}
+              onClick={() => void startUpdateInstall(updateBanner)}
+            >
+              {updateInstalling ? t('updateInstalling') : t('updateBannerDownload')}
+            </button>
+            <button
+              type="button"
+              className="btn ghost"
+              disabled={updateInstalling}
+              onClick={dismissUpdateBanner}
+            >
+              {t('updateBannerLater')}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <main className="control-main">
         <aside className="preview-col">
@@ -745,18 +802,22 @@ export function ControlApp(store: StoreApi) {
                   <span className="hint error-hint">{updateInfo.error}</span>
                 ) : null}
               </div>
-              {updateInfo.updateAvailable ? (
-                <p className="hint" style={{ marginTop: '0.75rem' }}>
-                  {t('download')}{' '}
-                  <a
-                    href="https://stagetime-pilot.vercel.app/download"
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ color: 'var(--teal)' }}
+              {updateInfo.updateAvailable && updateInfo.remote ? (
+                <div className="inline-form" style={{ marginTop: '0.75rem' }}>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={updateInstalling}
+                    onClick={() => void startUpdateInstall(updateInfo.remote!)}
                   >
-                    stagetime-pilot.vercel.app/download
-                  </a>
-                </p>
+                    {updateInstalling
+                      ? t('updateInstalling')
+                      : t('updateBannerDownload')}
+                  </button>
+                  {updateInstallError ? (
+                    <span className="hint error-hint">{updateInstallError}</span>
+                  ) : null}
+                </div>
               ) : null}
             </section>
             </>

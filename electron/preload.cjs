@@ -2,6 +2,9 @@ const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('electronAPI', {
   isElectron: true,
+  platform: process.platform,
+  getPlatform: () => ipcRenderer.invoke('get-platform'),
+  installUpdate: (opts) => ipcRenderer.invoke('install-update', opts),
   openShowWindow: (displayIds) => ipcRenderer.invoke('open-show-window', displayIds),
   openPgmWindow: () => ipcRenderer.invoke('open-pgm-window'),
   closeShowWindow: () => ipcRenderer.invoke('close-show-window'),

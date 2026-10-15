@@ -114,8 +114,22 @@ export const de = {
   invalidResponse: 'ungültige Antwort',
   updateBannerTitle: 'Update verfügbar: v{version}',
   updateBannerBody: 'Eine neue Version von StageTime-Pilot ist bereit.',
-  updateBannerDownload: 'Download öffnen',
+  updateBannerDownload: 'Download & Installation starten',
   updateBannerLater: 'Später',
+  updateInstalling: 'Lade Update…',
+  updateInstallFailed: 'Update fehlgeschlagen: {error}',
+  updateConfirmTitle: 'Update installieren',
+  updateConfirmMessage: 'Version {version} jetzt herunterladen und Installation starten?',
+  updateConfirmDetail:
+    'Die Installationsdatei wird geladen und geöffnet. Anschließend die neue Version installieren und StageTime-Pilot neu starten.',
+  updateConfirmOk: 'Ja',
+  updateConfirmCancel: 'Nein',
+  updateDoneTitle: 'Update bereit',
+  updateDoneMessageMac:
+    'Das DMG wurde geöffnet. Bitte StageTime-Pilot nach „Programme“ ziehen, die alte App ersetzen und neu starten.',
+  updateDoneMessageWin:
+    'Der Installer wurde geöffnet. Bitte der Installation folgen und StageTime-Pilot danach neu starten.',
+  updateNoDownloadUrl: 'Kein Download für dieses System gefunden.',
 
   outputsTitle: 'Ausgabe · NDI / RTMP / UDP',
   outputsHint:
@@ -252,8 +266,22 @@ export const en: Record<MessageKey, string> = {
   invalidResponse: 'invalid response',
   updateBannerTitle: 'Update available: v{version}',
   updateBannerBody: 'A new version of StageTime-Pilot is ready.',
-  updateBannerDownload: 'Open download',
+  updateBannerDownload: 'Start download & install',
   updateBannerLater: 'Later',
+  updateInstalling: 'Downloading update…',
+  updateInstallFailed: 'Update failed: {error}',
+  updateConfirmTitle: 'Install update',
+  updateConfirmMessage: 'Download version {version} and start installation now?',
+  updateConfirmDetail:
+    'The installer file will be downloaded and opened. Then install the new version and restart StageTime-Pilot.',
+  updateConfirmOk: 'Yes',
+  updateConfirmCancel: 'No',
+  updateDoneTitle: 'Update ready',
+  updateDoneMessageMac:
+    'The DMG was opened. Drag StageTime-Pilot to Applications, replace the old app, then relaunch.',
+  updateDoneMessageWin:
+    'The installer was opened. Follow the setup, then relaunch StageTime-Pilot.',
+  updateNoDownloadUrl: 'No download found for this system.',
 
   outputsTitle: 'Output · NDI / RTMP / UDP',
   outputsHint:

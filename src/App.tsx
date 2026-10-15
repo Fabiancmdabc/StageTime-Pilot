@@ -46,7 +46,7 @@ export default function App() {
             ? 'StageTime Remote'
             : route === 'output'
               ? 'StageTime Output'
-              : 'StageTime-Pilot'
+              : ''
 
     const isOutput =
       route === 'show' || route === 'pgm' || route === 'remote' || route === 'output'

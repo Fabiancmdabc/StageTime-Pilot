@@ -1,9 +1,10 @@
-import { app, BrowserWindow, ipcMain, screen } from 'electron'
+import { app, BrowserWindow, ipcMain, screen, shell } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 import { createApiServer } from './api-server.js'
 import { createOutputManager } from './outputs/manager.js'
+import { installUpdate } from './update-installer.js'
 
 const require = createRequire(import.meta.url)
 const os = require('node:os')
@@ -75,8 +76,8 @@ function createControlWindow() {
     minWidth: 960,
     minHeight: 680,
     backgroundColor: '#12151a',
-    title: 'StageTime-Pilot',
-    // hidden (nicht hiddenInset): kein nativer Fenstertitel-Text über den Traffic Lights
+    // Leerer Titel: kein schwarzer Streifen mit App-Namen über dem Topbar
+    title: '',
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 16, y: 18 },
     webPreferences: {
@@ -86,9 +87,15 @@ function createControlWindow() {
     },
   })
 
-  // document.title soll den nativen Titel nicht wieder einblenden
+  // document.title / window.open sollen keinen nativen Titel / In-App-Browser erzeugen
   controlWindow.on('page-title-updated', (event) => {
     event.preventDefault()
+  })
+  controlWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url && /^https?:/i.test(url)) {
+      void shell.openExternal(url)
+    }
+    return { action: 'deny' }
   })
 
   controlWindow.loadURL(resolveHtml('#control'))
@@ -352,6 +359,13 @@ ipcMain.handle('get-api-info', async () => ({
   token: apiConfig.token,
   enabled: apiConfig.enabled,
 }))
+
+ipcMain.handle('get-platform', async () => process.platform)
+
+ipcMain.handle('install-update', async (event, opts) => {
+  const parent = BrowserWindow.fromWebContents(event.sender)
+  return installUpdate(parent && !parent.isDestroyed() ? parent : controlWindow, opts)
+})
 
 ipcMain.handle('set-api-config', async (_e, config) => {
   apiConfig.enabled = Boolean(config?.enabled)

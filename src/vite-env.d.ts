@@ -10,6 +10,25 @@ export interface DisplayInfo {
 }
 
 interface StageTimeElectronAPI {
+  isElectron: boolean
+  platform?: string
+  getPlatform: () => Promise<string>
+  installUpdate: (opts: {
+    version: string
+    downloadUrl: string
+    confirmTitle: string
+    confirmMessage: string
+    confirmDetail: string
+    confirmOk: string
+    confirmCancel: string
+    doneTitle: string
+    doneMessage: string
+  }) => Promise<{
+    ok: boolean
+    cancelled?: boolean
+    error?: string
+    path?: string
+  }>
   openShowWindow: (displayIds?: number[]) => Promise<{ ok: boolean; displayIds: number[] }>
   openPgmWindow: () => Promise<void>
   closeShowWindow: () => Promise<void>
@@ -47,7 +66,6 @@ interface StageTimeElectronAPI {
     }) => void,
   ) => () => void
   replyApiQuery: (requestId: string, data: unknown) => void
-  isElectron: boolean
 }
 
 declare global {
