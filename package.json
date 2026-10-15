@@ -2,7 +2,7 @@
   "name": "stagetime-pilot",
   "productName": "StageTime-Pilot",
   "version": "1.0.4",
-  "description": "StageTime-Pilot \u2013 Redezeituhr f\u00fcr Veranstaltungen by Tasty-world",
+  "description": "StageTime-Pilot – Redezeituhr für Veranstaltungen by Tasty-world",
   "author": "Fabian Maly",
   "private": true,
   "main": "electron/main.js",
