@@ -17,7 +17,9 @@ app.setName('StageTime-Pilot')
 app.setPath('userData', path.join(app.getPath('appData'), 'StageTime-Pilot'))
 
 function applyDockIcon() {
-  if (process.platform !== 'darwin' || !app.dock) return
+  // Produktion: Dock nutzt das gebündelte .icns (runde macOS-Maske).
+  // Dev: transparentes PNG setzen, damit Electron.app nicht eckig bleibt.
+  if (process.platform !== 'darwin' || !app.dock || !isDev) return
   const iconPath = path.join(__dirname, '../build/icon.png')
   try {
     app.dock.setIcon(iconPath)
