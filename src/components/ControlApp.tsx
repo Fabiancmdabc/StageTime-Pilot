@@ -114,7 +114,6 @@ export function ControlApp(store: StoreApi) {
   const [lanHosts, setLanHosts] = useState<
     Array<{ address: string; iface: string; primary: boolean }>
   >([])
-  const [vpnActive, setVpnActive] = useState(false)
   const [serverStatus, setServerStatus] = useState<{
     phase: 'idle' | 'starting' | 'ok' | 'stopped' | 'error'
     port: number
@@ -135,7 +134,6 @@ export function ControlApp(store: StoreApi) {
       | Array<{ address: string; iface: string; score?: number; primary: boolean } | string>,
   ) => {
     const list = Array.isArray(payload) ? payload : payload?.addresses
-    setVpnActive(Boolean(!Array.isArray(payload) && payload?.vpnActive))
     if (!list?.length) {
       setLanHosts([])
       return
@@ -763,22 +761,6 @@ export function ControlApp(store: StoreApi) {
               </header>
 
               <div className="form-grid">
-                <label className="check-row">
-                  <input
-                    type="checkbox"
-                    checked={apiSettings.enabled}
-                    onChange={(e) => {
-                      const next = {
-                        ...apiSettings,
-                        enabled: e.target.checked,
-                      }
-                      setServerStatus((s) => ({ ...s, phase: 'starting' }))
-                      void refreshApiStatus({ settings: next, force: true })
-                    }}
-                  />
-                  {t('apiEnabled')}
-                </label>
-
                 <label>
                   {t('port')}
                   <input
@@ -793,8 +775,11 @@ export function ControlApp(store: StoreApi) {
                       })
                     }
                     onBlur={() => {
-                      if (apiSettings.enabled) {
-                        void refreshApiStatus({ force: true })
+                      if (serverStatus.phase === 'ok') {
+                        void refreshApiStatus({
+                          settings: { ...apiSettings, enabled: true },
+                          force: true,
+                        })
                       }
                     }}
                   />
@@ -813,8 +798,11 @@ export function ControlApp(store: StoreApi) {
                       })
                     }
                     onBlur={() => {
-                      if (apiSettings.enabled) {
-                        void refreshApiStatus({ force: true })
+                      if (serverStatus.phase === 'ok') {
+                        void refreshApiStatus({
+                          settings: { ...apiSettings, enabled: true },
+                          force: true,
+                        })
                       }
                     }}
                   />
@@ -822,39 +810,39 @@ export function ControlApp(store: StoreApi) {
 
                 <button
                   type="button"
-                  className="btn primary"
-                  onClick={() =>
+                  className={
+                    serverStatus.phase === 'ok' ? 'btn secondary' : 'btn primary'
+                  }
+                  disabled={serverStatus.phase === 'starting'}
+                  onClick={() => {
+                    if (serverStatus.phase === 'ok') {
+                      void refreshApiStatus({
+                        settings: { ...apiSettings, enabled: false },
+                        force: true,
+                      })
+                      return
+                    }
                     void refreshApiStatus({
                       settings: { ...apiSettings, enabled: true },
                       force: true,
                     })
-                  }
+                  }}
                 >
-                  {serverStatus.phase === 'ok'
-                    ? t('restartServer')
-                    : t('startServer')}
+                  {serverStatus.phase === 'starting'
+                    ? t('serverStatusStarting')
+                    : serverStatus.phase === 'ok'
+                      ? t('stopServer')
+                      : t('startServer')}
                 </button>
               </div>
 
-              <p
-                className={`server-status ${
-                  serverStatus.phase === 'ok'
-                    ? 'is-ok'
-                    : serverStatus.phase === 'error'
-                      ? 'is-error'
-                      : 'is-warn'
-                }`}
-              >
-                {serverStatus.phase === 'starting' && t('serverStatusStarting')}
-                {serverStatus.phase === 'ok' &&
-                  t('serverStatusListening', { port: serverStatus.port })}
-                {serverStatus.phase === 'stopped' && t('serverStatusStoppedHint')}
-                {serverStatus.phase === 'error' &&
-                  t('serverStatusError', {
+              {serverStatus.phase === 'error' && (
+                <p className="server-status is-error">
+                  {t('serverStatusError', {
                     error: serverStatus.error || 'unknown',
                   })}
-                {serverStatus.phase === 'idle' && t('serverStatusStarting')}
-              </p>
+                </p>
+              )}
 
               <div className="remote-urls">
                 <h3>{t('qrTitle')}</h3>
@@ -892,10 +880,6 @@ export function ControlApp(store: StoreApi) {
                   </details>
                 )}
                 <p className="hint">{t('remoteUrlsHint')}</p>
-                {vpnActive && (
-                  <p className="server-status is-warn">{t('vpnWarning')}</p>
-                )}
-                <p className="hint">{t('firewallHint')}</p>
               </div>
             </section>
           )}

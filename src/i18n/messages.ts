@@ -87,13 +87,13 @@ export const de = {
   tokenPlaceholder: 'leer = ohne Auth',
   restartServer: 'Server neu starten',
   startServer: 'Server starten',
+  stopServer: 'Server stoppen',
   remoteUrls: 'Remote-URLs (WLAN / iPad)',
   remoteUrlsHint:
     'QR-Code mit dem iPad scannen oder die Adresse in Safari öffnen. Live-Sync per WebSocket.',
   serverStatusListening: 'Server läuft auf Port {port}',
   serverStatusStopped: 'Server gestoppt',
-  serverStatusStoppedHint:
-    'Server gestoppt – „API / Remote-Server aktiv“ einschalten oder „Server starten“ tippen.',
+  serverStatusStoppedHint: 'Server gestoppt – „Server starten“ tippen.',
   serverStatusError: 'Server-Fehler: {error}',
   serverStatusStarting: 'Server startet…',
   noLanAddress:
@@ -258,13 +258,13 @@ export const en: Record<MessageKey, string> = {
   tokenPlaceholder: 'empty = no auth',
   restartServer: 'Restart server',
   startServer: 'Start server',
+  stopServer: 'Stop server',
   remoteUrls: 'Remote URLs (Wi‑Fi / iPad)',
   remoteUrlsHint:
     'Scan the QR code with the iPad or open the address in Safari. Live sync via WebSocket.',
   serverStatusListening: 'Server listening on port {port}',
   serverStatusStopped: 'Server stopped',
-  serverStatusStoppedHint:
-    'Server stopped – enable “API / remote server” or tap “Start server”.',
+  serverStatusStoppedHint: 'Server stopped – tap “Start server”.',
   serverStatusError: 'Server error: {error}',
   serverStatusStarting: 'Starting server…',
   noLanAddress:
