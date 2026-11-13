@@ -45,11 +45,28 @@ function loadState(): TimerState {
   }
 }
 
+const API_ENABLE_MIGRATE_KEY = 'stagetime.pilot.api.enableMigrate.v108'
+
 function loadApi(): ApiSettings {
   try {
     const raw = localStorage.getItem(API_STORAGE_KEY)
-    if (!raw) return { ...DEFAULT_API_SETTINGS }
-    return { ...DEFAULT_API_SETTINGS, ...JSON.parse(raw) }
+    const parsed = raw
+      ? { ...DEFAULT_API_SETTINGS, ...JSON.parse(raw) }
+      : { ...DEFAULT_API_SETTINGS }
+    // 1.0.7 konnte „enabled: false“ speichern und den Server dauerhaft gestoppt lassen.
+    // Einmalig wieder aktivieren; Nutzer kann danach bewusst deaktivieren.
+    try {
+      if (!localStorage.getItem(API_ENABLE_MIGRATE_KEY)) {
+        localStorage.setItem(API_ENABLE_MIGRATE_KEY, '1')
+        if (!parsed.enabled) {
+          parsed.enabled = true
+          localStorage.setItem(API_STORAGE_KEY, JSON.stringify(parsed))
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    return parsed
   } catch {
     return { ...DEFAULT_API_SETTINGS }
   }
@@ -330,8 +347,16 @@ export function useTimerStore(options: { master?: boolean } = {}) {
   const setApiSettings = useCallback((next: ApiSettings) => {
     setApiSettingsState(next)
     persistApi(next)
-    return window.electronAPI?.setApiConfig(next)
   }, [])
+
+  const applyApiSettings = useCallback(async (next?: ApiSettings, force = false) => {
+    const config = next ?? apiSettings
+    if (next) {
+      setApiSettingsState(config)
+      persistApi(config)
+    }
+    return window.electronAPI?.setApiConfig({ ...config, force })
+  }, [apiSettings])
 
   const applyApiCommand = useCallback(
     (action: string, params: Record<string, string>) => {
@@ -390,6 +415,7 @@ export function useTimerStore(options: { master?: boolean } = {}) {
     state: viewState,
     apiSettings,
     setApiSettings,
+    applyApiSettings,
     patch,
     setDuration,
     start,

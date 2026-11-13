@@ -35,21 +35,21 @@ interface DisplayInfo {
 interface StoreApi {
   state: TimerState
   apiSettings: ApiSettings
-  setApiSettings: (
-    s: ApiSettings,
-  ) =>
-    | void
-    | Promise<
-        | {
-            ok: boolean
-            port?: number
-            enabled?: boolean
-            listening?: boolean
-            error?: string
-            lastError?: string | null
-          }
-        | undefined
-      >
+  setApiSettings: (s: ApiSettings) => void
+  applyApiSettings: (
+    s?: ApiSettings,
+    force?: boolean,
+  ) => Promise<
+    | {
+        ok: boolean
+        port?: number
+        enabled?: boolean
+        listening?: boolean
+        error?: string
+        lastError?: string | null
+      }
+    | undefined
+  >
   setDuration: (seconds: number, autoStart?: boolean) => void
   start: () => void
   pause: () => void
@@ -193,35 +193,22 @@ export function ControlApp(store: StoreApi) {
     setServerStatus({ phase: 'ok', port })
   }
 
-  const refreshApiStatus = async (opts?: { force?: boolean }) => {
+  const refreshApiStatus = async (opts?: { force?: boolean; settings?: ApiSettings }) => {
     setServerStatus((s) => ({ ...s, phase: 'starting' }))
-    const result = await window.electronAPI?.setApiConfig({
-      ...apiSettings,
-      force: opts?.force,
-    })
+    const result = await store.applyApiSettings(opts?.settings, opts?.force ?? false)
     applyServerResult(result)
     const addrs = await window.electronAPI?.getLocalAddresses()
     if (addrs) setAddresses(addrs)
+    return result
   }
 
   useEffect(() => {
     void window.electronAPI?.getLocalAddresses().then(setAddresses)
     void (async () => {
       setServerStatus((s) => ({ ...s, phase: 'starting', port: apiSettings.port }))
-      const result = await window.electronAPI?.setApiConfig(apiSettings)
+      // force: true — Port nach vorherigem Start sicher neu binden
+      const result = await store.applyApiSettings(apiSettings, true)
       applyServerResult(result)
-      const info = await window.electronAPI?.getApiInfo()
-      if (info?.listening) {
-        setServerStatus({ phase: 'ok', port: info.port })
-      } else if (info && !info.enabled) {
-        setServerStatus({ phase: 'stopped', port: info.port })
-      } else if (info?.lastError) {
-        setServerStatus({
-          phase: 'error',
-          port: info.port,
-          error: info.lastError,
-        })
-      }
     })()
 
     const bootDisplays = async () => {
@@ -289,6 +276,24 @@ export function ControlApp(store: StoreApi) {
     setDurationMin(Math.floor(state.durationMs / 60000))
     setDurationSec(Math.floor((state.durationMs % 60000) / 1000))
   }, [state.durationMs])
+
+  useEffect(() => {
+    if (tab !== 'remote') return
+    void window.electronAPI?.getLocalAddresses().then(setAddresses)
+    void window.electronAPI?.getApiInfo().then((info) => {
+      if (!info) return
+      if (info.listening) {
+        setServerStatus({ phase: 'ok', port: info.port })
+        return
+      }
+      if (!info.enabled) {
+        setServerStatus({ phase: 'stopped', port: info.port })
+        return
+      }
+      // Checkbox an, aber nicht listening → hart neu starten
+      void refreshApiStatus({ force: true })
+    })
+  }, [tab])
 
   // Stiller Update-Check beim Start – Banner nur bei neuer Version
   useEffect(() => {
@@ -705,9 +710,7 @@ export function ControlApp(store: StoreApi) {
                         enabled: e.target.checked,
                       }
                       setServerStatus((s) => ({ ...s, phase: 'starting' }))
-                      void Promise.resolve(store.setApiSettings(next)).then(
-                        applyServerResult,
-                      )
+                      void refreshApiStatus({ settings: next, force: true })
                     }}
                   />
                   {t('apiEnabled')}
@@ -726,6 +729,11 @@ export function ControlApp(store: StoreApi) {
                         port: Number(e.target.value) || 8787,
                       })
                     }
+                    onBlur={() => {
+                      if (apiSettings.enabled) {
+                        void refreshApiStatus({ force: true })
+                      }
+                    }}
                   />
                 </label>
 
@@ -741,15 +749,27 @@ export function ControlApp(store: StoreApi) {
                         token: e.target.value,
                       })
                     }
+                    onBlur={() => {
+                      if (apiSettings.enabled) {
+                        void refreshApiStatus({ force: true })
+                      }
+                    }}
                   />
                 </label>
 
                 <button
                   type="button"
                   className="btn primary"
-                  onClick={() => void refreshApiStatus({ force: true })}
+                  onClick={() =>
+                    void refreshApiStatus({
+                      settings: { ...apiSettings, enabled: true },
+                      force: true,
+                    })
+                  }
                 >
-                  {t('restartServer')}
+                  {serverStatus.phase === 'ok'
+                    ? t('restartServer')
+                    : t('startServer')}
                 </button>
               </div>
 
@@ -765,7 +785,7 @@ export function ControlApp(store: StoreApi) {
                 {serverStatus.phase === 'starting' && t('serverStatusStarting')}
                 {serverStatus.phase === 'ok' &&
                   t('serverStatusListening', { port: serverStatus.port })}
-                {serverStatus.phase === 'stopped' && t('serverStatusStopped')}
+                {serverStatus.phase === 'stopped' && t('serverStatusStoppedHint')}
                 {serverStatus.phase === 'error' &&
                   t('serverStatusError', {
                     error: serverStatus.error || 'unknown',

@@ -465,13 +465,14 @@ ipcMain.handle('set-api-config', async (_e, config) => {
 
   try {
     const result = await ensureApiServer({ force, apply })
+    // Live-apiConfig gewinnt — verhindert veraltetes listening/enabled aus result
     return {
+      ...result,
       ok: true,
       port: apiConfig.port,
       enabled: apiConfig.enabled,
-      listening: apiConfig.listening,
+      listening: Boolean(apiConfig.listening && apiServer),
       lastError: apiConfig.lastError,
-      ...result,
     }
   } catch (err) {
     return {
@@ -501,11 +502,8 @@ app.whenReady().then(async () => {
     getLatestState: () => latestState,
   })
   createControlWindow()
-  try {
-    await ensureApiServer()
-  } catch (err) {
-    console.error('API server failed to start', err)
-  }
+  // API-Server startet die Control-UI per setApiConfig (LocalStorage-Settings).
+  // Früherer Parallel-Start hier hat mit enabled:false aus der UI geraced.
 
   screen.on('display-added', () => {
     controlWindow?.webContents.send('displays-changed', listDisplays())
