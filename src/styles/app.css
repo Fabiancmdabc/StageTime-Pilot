@@ -682,6 +682,24 @@ select {
   font-size: 0.78rem;
 }
 
+.remote-extra {
+  margin: 0.65rem 0 0.35rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+.remote-extra summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.remote-extra code {
+  margin-top: 0.45rem;
+}
+
 .output-card {
   border: 1px solid var(--line);
   border-radius: 12px;

@@ -358,18 +358,62 @@ function ensureApiServer({ force = false, apply } = {}) {
   return apiServerQueue
 }
 
+function scoreLocalIface(iface, address) {
+  const lower = String(iface || '').toLowerCase()
+  // Virtuelle / nicht-WLAN-Interfaces: iPad erreicht sie im normalen WLAN nicht
+  if (/^(awdl|llw|utun|bridge|ap|vmnet|vnic|docker|br-|veth|tailscale|zt|ipsec|ppp)/i.test(lower)) {
+    return -1
+  }
+  if (String(address).startsWith('169.254.')) return -1
+
+  let score = 40
+  if (lower === 'en0') score = 100
+  else if (/^en\d+$/.test(lower)) score = 75
+  else if (/wifi|wlan/i.test(lower)) score = 90
+
+  if (/^192\.168\./.test(address)) score += 15
+  else if (/^10\./.test(address)) score += 10
+  else if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(address)) score += 8
+  return score
+}
+
+/** Bevorzugt die echte WLAN-/LAN-Adresse (meist en0), filtert VPN/Bridge/Link-Local. */
 function getLocalAddresses() {
   const nets = os.networkInterfaces()
-  const result = []
-  for (const entries of Object.values(nets)) {
+  const scored = []
+  for (const [iface, entries] of Object.entries(nets)) {
     for (const net of entries ?? []) {
       const family = String(net.family)
-      if ((family === 'IPv4' || family === '4') && !net.internal) {
-        result.push(net.address)
+      if ((family !== 'IPv4' && family !== '4') || net.internal) continue
+      const score = scoreLocalIface(iface, net.address)
+      if (score < 0) continue
+      scored.push({ address: net.address, iface, score, primary: false })
+    }
+  }
+  scored.sort((a, b) => b.score - a.score || a.address.localeCompare(b.address))
+  const seen = new Set()
+  const unique = []
+  for (const row of scored) {
+    if (seen.has(row.address)) continue
+    seen.add(row.address)
+    unique.push(row)
+  }
+  if (unique[0]) unique[0].primary = true
+
+  // Fallback: alles Nicht-Interne, falls Filter zu streng war
+  if (unique.length === 0) {
+    for (const [iface, entries] of Object.entries(nets)) {
+      for (const net of entries ?? []) {
+        const family = String(net.family)
+        if ((family === 'IPv4' || family === '4') && !net.internal) {
+          if (seen.has(net.address)) continue
+          seen.add(net.address)
+          unique.push({ address: net.address, iface, score: 0, primary: unique.length === 0 })
+        }
       }
     }
   }
-  return result
+  return unique
 }
 
 ipcMain.handle('get-displays', async () => listDisplays())
@@ -427,6 +471,44 @@ ipcMain.handle('minimize-pgm-window', async () => {
 })
 
 ipcMain.handle('get-local-addresses', async () => getLocalAddresses())
+
+ipcMain.handle('probe-api', async () => {
+  const port = apiConfig.port
+  if (!apiConfig.enabled) {
+    return { ok: false, listening: false, enabled: false, port, error: 'disabled' }
+  }
+  if (!apiConfig.listening || !apiServer) {
+    return {
+      ok: false,
+      listening: false,
+      enabled: true,
+      port,
+      error: apiConfig.lastError || 'not_listening',
+    }
+  }
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/api/health`, {
+      signal: AbortSignal.timeout(1500),
+    })
+    const body = await res.json().catch(() => null)
+    return {
+      ok: res.ok && body?.ok === true,
+      listening: true,
+      enabled: true,
+      port,
+      health: body,
+      error: res.ok ? null : `HTTP ${res.status}`,
+    }
+  } catch (err) {
+    return {
+      ok: false,
+      listening: false,
+      enabled: true,
+      port,
+      error: String(err?.message ?? err),
+    }
+  }
+})
 
 ipcMain.handle('set-output-config', async (_e, config) => {
   if (!outputManager) return { ok: false, error: 'not_ready' }

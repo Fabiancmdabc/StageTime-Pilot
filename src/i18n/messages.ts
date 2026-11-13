@@ -98,6 +98,10 @@ export const de = {
   serverStatusStarting: 'Server startet…',
   noLanAddress:
     'Keine WLAN-/LAN-Adresse gefunden – nur localhost. Mac und iPad müssen im selben WLAN sein.',
+  primaryLanHint: 'Hauptadresse ({iface}): {ip} — diesen QR mit dem iPad scannen.',
+  extraLanAddresses: 'Weitere Netz-Adressen (meist ignorieren)',
+  firewallHint:
+    'Falls das iPad nicht verbindet: Mac und iPad im selben WLAN, in macOS unter Datenschutz → Lokales Netzwerk StageTime-Pilot erlauben, Firewall-Hinweis bestätigen.',
   qrTitle: 'QR-Code zum Öffnen',
 
   displaysTitle: 'Ausgabe · Displays',
@@ -263,6 +267,10 @@ export const en: Record<MessageKey, string> = {
   serverStatusStarting: 'Starting server…',
   noLanAddress:
     'No Wi‑Fi/LAN address found – localhost only. Mac and iPad must share the same Wi‑Fi.',
+  primaryLanHint: 'Primary address ({iface}): {ip} — scan this QR with the iPad.',
+  extraLanAddresses: 'Other network addresses (usually ignore)',
+  firewallHint:
+    'If the iPad cannot connect: same Wi‑Fi, allow StageTime-Pilot under Privacy → Local Network, and confirm any firewall prompt.',
   qrTitle: 'QR code to open',
 
   displaysTitle: 'Output · Displays',

@@ -111,12 +111,34 @@ export function ControlApp(store: StoreApi) {
   )
   const [warnAt, setWarnAt] = useState(state.warnAtSec)
   const [criticalAt, setCriticalAt] = useState(state.criticalAtSec)
-  const [addresses, setAddresses] = useState<string[]>([])
+  const [lanHosts, setLanHosts] = useState<
+    Array<{ address: string; iface: string; primary: boolean }>
+  >([])
   const [serverStatus, setServerStatus] = useState<{
     phase: 'idle' | 'starting' | 'ok' | 'stopped' | 'error'
     port: number
     error?: string
   }>({ phase: 'idle', port: apiSettings.port })
+
+  const ingestAddresses = (
+    list?: Array<{ address: string; iface: string; score?: number; primary: boolean } | string>,
+  ) => {
+    if (!list?.length) {
+      setLanHosts([])
+      return
+    }
+    const mapped = list.map((row, index) =>
+      typeof row === 'string'
+        ? { address: row, iface: '', primary: index === 0 }
+        : {
+            address: row.address,
+            iface: row.iface,
+            primary: Boolean(row.primary) || index === 0,
+          },
+    )
+    if (!mapped.some((h) => h.primary) && mapped[0]) mapped[0].primary = true
+    setLanHosts(mapped)
+  }
   const [tab, setTab] = useState<'run' | 'look' | 'remote' | 'settings'>('run')
   const [theme, setTheme] = useState<UiTheme>(() => loadTheme())
   const [displays, setDisplays] = useState<DisplayInfo[]>([])
@@ -195,20 +217,48 @@ export function ControlApp(store: StoreApi) {
 
   const refreshApiStatus = async (opts?: { force?: boolean; settings?: ApiSettings }) => {
     setServerStatus((s) => ({ ...s, phase: 'starting' }))
-    const result = await store.applyApiSettings(opts?.settings, opts?.force ?? false)
+    const settings = opts?.settings ?? {
+      ...apiSettings,
+      enabled: true,
+    }
+    const result = await store.applyApiSettings(settings, opts?.force ?? true)
     applyServerResult(result)
     const addrs = await window.electronAPI?.getLocalAddresses()
-    if (addrs) setAddresses(addrs)
+    ingestAddresses(addrs)
+    if (result?.ok && result.enabled !== false) {
+      const probe = await window.electronAPI?.probeApi()
+      if (probe && !probe.ok) {
+        setServerStatus({
+          phase: 'error',
+          port: probe.port ?? settings.port,
+          error: probe.error || 'health check failed',
+        })
+      } else if (probe?.ok) {
+        setServerStatus({ phase: 'ok', port: probe.port ?? settings.port })
+      }
+    }
     return result
   }
 
   useEffect(() => {
-    void window.electronAPI?.getLocalAddresses().then(setAddresses)
+    void window.electronAPI?.getLocalAddresses().then(ingestAddresses)
     void (async () => {
       setServerStatus((s) => ({ ...s, phase: 'starting', port: apiSettings.port }))
-      // force: true — Port nach vorherigem Start sicher neu binden
-      const result = await store.applyApiSettings(apiSettings, true)
+      // Boot: Server immer aktiv starten (Remote ist Kernfeature)
+      const boot = { ...apiSettings, enabled: true }
+      store.setApiSettings(boot)
+      const result = await store.applyApiSettings(boot, true)
       applyServerResult(result)
+      const probe = await window.electronAPI?.probeApi()
+      if (probe?.ok) {
+        setServerStatus({ phase: 'ok', port: probe.port ?? boot.port })
+      } else if (probe && boot.enabled) {
+        setServerStatus({
+          phase: 'error',
+          port: probe.port ?? boot.port,
+          error: probe.error || 'not listening',
+        })
+      }
     })()
 
     const bootDisplays = async () => {
@@ -279,20 +329,22 @@ export function ControlApp(store: StoreApi) {
 
   useEffect(() => {
     if (tab !== 'remote') return
-    void window.electronAPI?.getLocalAddresses().then(setAddresses)
-    void window.electronAPI?.getApiInfo().then((info) => {
+    void window.electronAPI?.getLocalAddresses().then(ingestAddresses)
+    void (async () => {
+      const info = await window.electronAPI?.getApiInfo()
       if (!info) return
       if (info.listening) {
-        setServerStatus({ phase: 'ok', port: info.port })
-        return
+        const probe = await window.electronAPI?.probeApi()
+        if (probe?.ok) {
+          setServerStatus({ phase: 'ok', port: info.port })
+          return
+        }
       }
-      if (!info.enabled) {
-        setServerStatus({ phase: 'stopped', port: info.port })
-        return
-      }
-      // Checkbox an, aber nicht listening → hart neu starten
-      void refreshApiStatus({ force: true })
-    })
+      void refreshApiStatus({
+        settings: { ...apiSettings, enabled: true },
+        force: true,
+      })
+    })()
   }, [tab])
 
   // Stiller Update-Check beim Start – Banner nur bei neuer Version
@@ -314,19 +366,17 @@ export function ControlApp(store: StoreApi) {
   }, [])
 
   const remotePort = serverStatus.port || apiSettings.port
-  const remoteUrls = useMemo(() => {
-    const hosts = addresses.length ? addresses : ['127.0.0.1']
-    return hosts.map((ip) => {
-      const tokenQ = apiSettings.token
-        ? `?token=${encodeURIComponent(apiSettings.token)}`
-        : ''
-      return `http://${ip}:${remotePort}/remote${tokenQ}`
-    })
-  }, [addresses, remotePort, apiSettings.token])
-
-  const lanUrls = useMemo(
-    () => remoteUrls.filter((url) => !url.includes('127.0.0.1')),
-    [remoteUrls],
+  const primaryHost = lanHosts.find((h) => h.primary) ?? lanHosts[0]
+  const primaryUrl = useMemo(() => {
+    const ip = primaryHost?.address || '127.0.0.1'
+    const tokenQ = apiSettings.token
+      ? `?token=${encodeURIComponent(apiSettings.token)}`
+      : ''
+    return `http://${ip}:${remotePort}/remote${tokenQ}`
+  }, [primaryHost?.address, remotePort, apiSettings.token])
+  const extraHosts = useMemo(
+    () => lanHosts.filter((h) => h.address !== primaryHost?.address),
+    [lanHosts, primaryHost?.address],
   )
 
   const phase = getPhase(state)
@@ -795,19 +845,41 @@ export function ControlApp(store: StoreApi) {
 
               <div className="remote-urls">
                 <h3>{t('qrTitle')}</h3>
-                {!addresses.length && (
+                {!lanHosts.length && (
                   <p className="hint">{t('noLanAddress')}</p>
                 )}
+                {primaryHost && (
+                  <p className="hint">
+                    {t('primaryLanHint', {
+                      iface: primaryHost.iface || 'LAN',
+                      ip: primaryHost.address,
+                    })}
+                  </p>
+                )}
                 <div className="remote-qr-grid">
-                  {(lanUrls.length ? lanUrls : remoteUrls).map((url) => (
-                    <RemoteQr key={url} url={url} />
-                  ))}
+                  <RemoteQr url={primaryUrl} label={primaryHost?.iface} />
                 </div>
                 <h3>{t('remoteUrls')}</h3>
-                {remoteUrls.map((url) => (
-                  <code key={url}>{url}</code>
-                ))}
+                <code>{primaryUrl}</code>
+                {extraHosts.length > 0 && (
+                  <details className="remote-extra">
+                    <summary>{t('extraLanAddresses')}</summary>
+                    {extraHosts.map((h) => {
+                      const tokenQ = apiSettings.token
+                        ? `?token=${encodeURIComponent(apiSettings.token)}`
+                        : ''
+                      const url = `http://${h.address}:${remotePort}/remote${tokenQ}`
+                      return (
+                        <code key={h.address}>
+                          {h.iface ? `${h.iface}: ` : ''}
+                          {url}
+                        </code>
+                      )
+                    })}
+                  </details>
+                )}
                 <p className="hint">{t('remoteUrlsHint')}</p>
+                <p className="hint">{t('firewallHint')}</p>
               </div>
             </section>
           )}

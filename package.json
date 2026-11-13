@@ -1,7 +1,7 @@
 {
   "name": "stagetime-pilot",
   "productName": "StageTime-Pilot",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "StageTime-Pilot – Redezeituhr für Veranstaltungen by Tasty-world",
   "author": "Fabian Maly",
   "private": true,
@@ -84,7 +84,11 @@
       "entitlementsInherit": "build/entitlements.mac.plist",
       "extendInfo": {
         "LSMinimumSystemVersion": "12.0",
-        "NSHighResolutionCapable": true
+        "NSHighResolutionCapable": true,
+        "NSLocalNetworkUsageDescription": "StageTime-Pilot stellt die Remote-Anzeige und API im lokalen WLAN für iPad und andere Geräte bereit.",
+        "NSBonjourServices": [
+          "_http._tcp."
+        ]
       }
     },
     "dmg": {

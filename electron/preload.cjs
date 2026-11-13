@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('displays-changed', handler)
   },
   getLocalAddresses: () => ipcRenderer.invoke('get-local-addresses'),
+  probeApi: () => ipcRenderer.invoke('probe-api'),
   getApiInfo: () => ipcRenderer.invoke('get-api-info'),
   setApiConfig: (config) => ipcRenderer.invoke('set-api-config', config),
   setOutputConfig: (config) => ipcRenderer.invoke('set-output-config', config),
