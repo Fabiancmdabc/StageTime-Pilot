@@ -87,6 +87,101 @@ export function createApiServer({ port, token, onCommand, getState }) {
     entry.resolve(data)
   }
 
+  function listenOn(portToUse) {
+    return new Promise((resolve, reject) => {
+      const httpServer = http.createServer(async (req, res) => {
+        if (req.method === 'OPTIONS') {
+          res.writeHead(204, {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Headers':
+              'Content-Type, X-Companion-Token, X-Api-Token',
+          })
+          res.end()
+          return
+        }
+
+        const { pathname, params } = parseUrl(req.url ?? '/')
+
+        if (pathname === '/remote' || pathname === '/remote/') {
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+          res.end(remoteHtml())
+          return
+        }
+
+        // Serve built assets for remote clients in production
+        if (!pathname.startsWith('/api') && pathname !== '/health' && pathname !== '/status') {
+          const assetPath = pathname === '/' ? '/index.html' : pathname
+          if (
+            assetPath.startsWith('/assets') ||
+            assetPath.endsWith('.js') ||
+            assetPath.endsWith('.css') ||
+            assetPath.endsWith('.png')
+          ) {
+            const file = path.join(__dirname, '../dist', assetPath.replace(/^\//, ''))
+            if (fs.existsSync(file)) {
+              const ext = path.extname(file)
+              const types = {
+                '.js': 'application/javascript',
+                '.css': 'text/css',
+                '.png': 'image/png',
+                '.html': 'text/html',
+                '.svg': 'image/svg+xml',
+              }
+              res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' })
+              fs.createReadStream(file).pipe(res)
+              return
+            }
+          }
+        }
+
+        if (req.method !== 'GET') {
+          sendJson(res, 405, { ok: false, error: 'method_not_allowed' })
+          return
+        }
+
+        try {
+          await handleApi(pathname, params, req, res)
+        } catch (err) {
+          sendJson(res, 500, { ok: false, error: String(err?.message ?? err) })
+        }
+      })
+
+      const socketServer = new WebSocketServer({ server: httpServer, path: '/ws' })
+      socketServer.on('connection', (socket) => {
+        const state = getState?.()
+        if (state) socket.send(JSON.stringify({ type: 'state', state }))
+      })
+
+      const onError = (err) => {
+        httpServer.off('listening', onListening)
+        try {
+          socketServer.close()
+        } catch {
+          /* ignore */
+        }
+        try {
+          httpServer.close()
+        } catch {
+          /* ignore */
+        }
+        reject(err)
+      }
+
+      const onListening = () => {
+        httpServer.off('error', onError)
+        server = httpServer
+        wss = socketServer
+        listenPort = portToUse
+        resolve({ ok: true, port: portToUse })
+      }
+
+      httpServer.once('error', onError)
+      httpServer.once('listening', onListening)
+      httpServer.listen(portToUse, '0.0.0.0')
+    })
+  }
+
   async function handleApi(pathname, params, req, res) {
     if (!checkToken(req, params)) {
       sendJson(res, 401, { ok: false, error: 'unauthorized' })
@@ -167,88 +262,55 @@ export function createApiServer({ port, token, onCommand, getState }) {
     await handler()
   }
 
-  function start() {
-    return new Promise((resolve, reject) => {
-      server = http.createServer(async (req, res) => {
-        if (req.method === 'OPTIONS') {
-          res.writeHead(204, {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET,OPTIONS',
-            'Access-Control-Allow-Headers':
-              'Content-Type, X-Companion-Token, X-Api-Token',
-          })
-          res.end()
-          return
-        }
-
-        const { pathname, params } = parseUrl(req.url ?? '/')
-
-        if (pathname === '/remote' || pathname === '/remote/') {
-          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-          res.end(remoteHtml())
-          return
-        }
-
-        // Serve built assets for remote clients in production
-        if (!pathname.startsWith('/api') && pathname !== '/health' && pathname !== '/status') {
-          const assetPath = pathname === '/' ? '/index.html' : pathname
-          if (assetPath.startsWith('/assets') || assetPath.endsWith('.js') || assetPath.endsWith('.css') || assetPath.endsWith('.png')) {
-            const file = path.join(__dirname, '../dist', assetPath.replace(/^\//, ''))
-            if (fs.existsSync(file)) {
-              const ext = path.extname(file)
-              const types = {
-                '.js': 'application/javascript',
-                '.css': 'text/css',
-                '.png': 'image/png',
-                '.html': 'text/html',
-                '.svg': 'image/svg+xml',
-              }
-              res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' })
-              fs.createReadStream(file).pipe(res)
-              return
-            }
-          }
-        }
-
-        if (req.method !== 'GET') {
-          sendJson(res, 405, { ok: false, error: 'method_not_allowed' })
-          return
-        }
-
-        try {
-          await handleApi(pathname, params, req, res)
-        } catch (err) {
-          sendJson(res, 500, { ok: false, error: String(err?.message ?? err) })
-        }
-      })
-
-      wss = new WebSocketServer({ server, path: '/ws' })
-      wss.on('connection', (socket) => {
-        const state = getState?.()
-        if (state) socket.send(JSON.stringify({ type: 'state', state }))
-      })
-
-      server.once('error', reject)
-      server.listen(port, '0.0.0.0', () => {
-        listenPort = port
-        resolve({ ok: true, port })
-      })
-    })
+  async function start() {
+    await stop()
+    const preferred = Number(port) || 8787
+    let lastError = null
+    for (let candidate = preferred; candidate < preferred + 20; candidate += 1) {
+      try {
+        return await listenOn(candidate)
+      } catch (err) {
+        lastError = err
+        if (err?.code !== 'EADDRINUSE') throw err
+      }
+    }
+    const message =
+      lastError?.message ||
+      `Port ${preferred}–${preferred + 19} bereits belegt`
+    const error = new Error(message)
+    error.code = lastError?.code
+    throw error
   }
 
   function stop() {
-    try {
-      wss?.close()
-    } catch {
-      /* ignore */
-    }
-    try {
-      server?.close()
-    } catch {
-      /* ignore */
-    }
-    wss = null
-    server = null
+    return new Promise((resolve) => {
+      const currentWss = wss
+      const currentServer = server
+      wss = null
+      server = null
+
+      let settled = false
+      const finish = () => {
+        if (settled) return
+        settled = true
+        resolve()
+      }
+
+      try {
+        currentWss?.close()
+      } catch {
+        /* ignore */
+      }
+
+      if (!currentServer) {
+        finish()
+        return
+      }
+
+      currentServer.close(() => finish())
+      // Falls close hängt (offene Connections), trotzdem weiter
+      setTimeout(finish, 1200)
+    })
   }
 
   return { start, stop, broadcastState, resolveQuery }

@@ -42,7 +42,12 @@ const apiConfig = {
   enabled: true,
   port: 8787,
   token: '',
+  listening: false,
+  lastError: null,
 }
+
+/** Serialisiert Start/Stop, damit Port-Freigabe abgewartet wird */
+let apiServerQueue = Promise.resolve()
 
 function resolveHtml(hash) {
   if (isDev) return `${DEV_URL}/${hash}`
@@ -81,7 +86,7 @@ function createControlWindow() {
     // Leerer Titel: kein schwarzer Streifen mit App-Namen über dem Topbar
     title: '',
     titleBarStyle: 'hidden',
-    trafficLightPosition: { x: 16, y: 18 },
+    trafficLightPosition: { x: 14, y: 20 },
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -264,21 +269,93 @@ function forwardApiCommand(payload) {
   }
 }
 
-function ensureApiServer() {
-  if (apiServer) {
-    apiServer.stop()
-    apiServer = null
+function ensureApiServer({ force = false, apply } = {}) {
+  const run = async () => {
+    if (apply) {
+      const same =
+        apply.enabled === apiConfig.enabled &&
+        apply.port === apiConfig.port &&
+        apply.token === apiConfig.token
+      apiConfig.enabled = apply.enabled
+      apiConfig.port = apply.port
+      apiConfig.token = apply.token
+
+      if (
+        !force &&
+        same &&
+        !apiConfig.lastError &&
+        ((apiConfig.enabled && apiConfig.listening && apiServer) ||
+          (!apiConfig.enabled && !apiServer))
+      ) {
+        return {
+          ok: true,
+          enabled: apiConfig.enabled,
+          listening: apiConfig.listening,
+          port: apiConfig.port,
+          skipped: true,
+        }
+      }
+    } else if (
+      !force &&
+      !apiConfig.lastError &&
+      apiConfig.enabled &&
+      apiConfig.listening &&
+      apiServer
+    ) {
+      return {
+        ok: true,
+        enabled: true,
+        listening: true,
+        port: apiConfig.port,
+        skipped: true,
+      }
+    }
+
+    if (apiServer) {
+      await apiServer.stop()
+      apiServer = null
+    }
+    apiConfig.listening = false
+
+    if (!apiConfig.enabled) {
+      apiConfig.lastError = null
+      return { ok: true, enabled: false, listening: false, port: apiConfig.port }
+    }
+
+    const next = createApiServer({
+      port: apiConfig.port,
+      token: apiConfig.token,
+      onCommand: (payload) => forwardApiCommand(payload),
+      getState: () => latestState,
+    })
+
+    try {
+      const result = await next.start()
+      apiServer = next
+      if (result?.port) apiConfig.port = result.port
+      apiConfig.listening = true
+      apiConfig.lastError = null
+      return {
+        ok: true,
+        enabled: true,
+        listening: true,
+        port: apiConfig.port,
+      }
+    } catch (err) {
+      try {
+        await next.stop()
+      } catch {
+        /* ignore */
+      }
+      apiServer = null
+      apiConfig.listening = false
+      apiConfig.lastError = String(err?.message ?? err)
+      throw err
+    }
   }
-  if (!apiConfig.enabled) return Promise.resolve({ ok: true })
 
-  apiServer = createApiServer({
-    port: apiConfig.port,
-    token: apiConfig.token,
-    onCommand: (payload) => forwardApiCommand(payload),
-    getState: () => latestState,
-  })
-
-  return apiServer.start()
+  apiServerQueue = apiServerQueue.then(run, run)
+  return apiServerQueue
 }
 
 function getLocalAddresses() {
@@ -367,6 +444,8 @@ ipcMain.handle('get-api-info', async () => ({
   port: apiConfig.port,
   token: apiConfig.token,
   enabled: apiConfig.enabled,
+  listening: apiConfig.listening,
+  lastError: apiConfig.lastError,
 }))
 
 ipcMain.handle('get-platform', async () => process.platform)
@@ -377,14 +456,32 @@ ipcMain.handle('install-update', async (event, opts) => {
 })
 
 ipcMain.handle('set-api-config', async (_e, config) => {
-  apiConfig.enabled = Boolean(config?.enabled)
-  apiConfig.port = Number(config?.port) || 8787
-  apiConfig.token = String(config?.token ?? '')
+  const apply = {
+    enabled: Boolean(config?.enabled),
+    port: Number(config?.port) || 8787,
+    token: String(config?.token ?? ''),
+  }
+  const force = Boolean(config?.force)
+
   try {
-    const result = await ensureApiServer()
-    return { ok: true, port: apiConfig.port, ...result }
+    const result = await ensureApiServer({ force, apply })
+    return {
+      ok: true,
+      port: apiConfig.port,
+      enabled: apiConfig.enabled,
+      listening: apiConfig.listening,
+      lastError: apiConfig.lastError,
+      ...result,
+    }
   } catch (err) {
-    return { ok: false, error: String(err?.message ?? err) }
+    return {
+      ok: false,
+      enabled: apiConfig.enabled,
+      listening: false,
+      port: apiConfig.port,
+      error: String(err?.message ?? err),
+      lastError: apiConfig.lastError,
+    }
   }
 })
 
@@ -434,7 +531,7 @@ app.whenReady().then(async () => {
 })
 
 app.on('window-all-closed', () => {
-  apiServer?.stop()
+  void apiServer?.stop()
   void outputManager?.stopAll()
   if (process.platform !== 'darwin') app.quit()
 })

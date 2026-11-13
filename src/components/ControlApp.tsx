@@ -19,6 +19,7 @@ import { formatCountdown, getPhase } from '../utils/time'
 import { MessagePanel } from './MessagePanel'
 import { OutputsPanel } from './OutputsPanel'
 import { PresetsPanel } from './PresetsPanel'
+import { RemoteQr } from './RemoteQr'
 import { ShowDisplay } from './ShowDisplay'
 import { VisualEditor } from './VisualEditor'
 
@@ -34,7 +35,21 @@ interface DisplayInfo {
 interface StoreApi {
   state: TimerState
   apiSettings: ApiSettings
-  setApiSettings: (s: ApiSettings) => void
+  setApiSettings: (
+    s: ApiSettings,
+  ) =>
+    | void
+    | Promise<
+        | {
+            ok: boolean
+            port?: number
+            enabled?: boolean
+            listening?: boolean
+            error?: string
+            lastError?: string | null
+          }
+        | undefined
+      >
   setDuration: (seconds: number, autoStart?: boolean) => void
   start: () => void
   pause: () => void
@@ -97,6 +112,11 @@ export function ControlApp(store: StoreApi) {
   const [warnAt, setWarnAt] = useState(state.warnAtSec)
   const [criticalAt, setCriticalAt] = useState(state.criticalAtSec)
   const [addresses, setAddresses] = useState<string[]>([])
+  const [serverStatus, setServerStatus] = useState<{
+    phase: 'idle' | 'starting' | 'ok' | 'stopped' | 'error'
+    port: number
+    error?: string
+  }>({ phase: 'idle', port: apiSettings.port })
   const [tab, setTab] = useState<'run' | 'look' | 'remote' | 'settings'>('run')
   const [theme, setTheme] = useState<UiTheme>(() => loadTheme())
   const [displays, setDisplays] = useState<DisplayInfo[]>([])
@@ -126,9 +146,83 @@ export function ControlApp(store: StoreApi) {
     }
   }, [theme])
 
+  const applyServerResult = (
+    result?:
+      | {
+          ok: boolean
+          port?: number
+          enabled?: boolean
+          listening?: boolean
+          error?: string
+          lastError?: string | null
+        }
+      | null
+      | void,
+  ) => {
+    if (!result) {
+      if (!window.electronAPI) {
+        setServerStatus({
+          phase: 'error',
+          port: apiSettings.port,
+          error: 'Desktop-App erforderlich',
+        })
+      }
+      return
+    }
+    const port = result.port ?? apiSettings.port
+    if (!result.ok) {
+      setServerStatus({
+        phase: 'error',
+        port,
+        error: result.error || result.lastError || 'unknown',
+      })
+      return
+    }
+    if (result.enabled === false) {
+      setServerStatus({ phase: 'stopped', port })
+      return
+    }
+    if (result.listening === false) {
+      setServerStatus({
+        phase: 'error',
+        port,
+        error: result.lastError || result.error || 'not listening',
+      })
+      return
+    }
+    setServerStatus({ phase: 'ok', port })
+  }
+
+  const refreshApiStatus = async (opts?: { force?: boolean }) => {
+    setServerStatus((s) => ({ ...s, phase: 'starting' }))
+    const result = await window.electronAPI?.setApiConfig({
+      ...apiSettings,
+      force: opts?.force,
+    })
+    applyServerResult(result)
+    const addrs = await window.electronAPI?.getLocalAddresses()
+    if (addrs) setAddresses(addrs)
+  }
+
   useEffect(() => {
     void window.electronAPI?.getLocalAddresses().then(setAddresses)
-    void window.electronAPI?.setApiConfig(apiSettings)
+    void (async () => {
+      setServerStatus((s) => ({ ...s, phase: 'starting', port: apiSettings.port }))
+      const result = await window.electronAPI?.setApiConfig(apiSettings)
+      applyServerResult(result)
+      const info = await window.electronAPI?.getApiInfo()
+      if (info?.listening) {
+        setServerStatus({ phase: 'ok', port: info.port })
+      } else if (info && !info.enabled) {
+        setServerStatus({ phase: 'stopped', port: info.port })
+      } else if (info?.lastError) {
+        setServerStatus({
+          phase: 'error',
+          port: info.port,
+          error: info.lastError,
+        })
+      }
+    })()
 
     const bootDisplays = async () => {
       if (!window.electronAPI?.getDisplays) return
@@ -214,15 +308,21 @@ export function ControlApp(store: StoreApi) {
     }
   }, [])
 
+  const remotePort = serverStatus.port || apiSettings.port
   const remoteUrls = useMemo(() => {
     const hosts = addresses.length ? addresses : ['127.0.0.1']
     return hosts.map((ip) => {
       const tokenQ = apiSettings.token
         ? `?token=${encodeURIComponent(apiSettings.token)}`
         : ''
-      return `http://${ip}:${apiSettings.port}/remote${tokenQ}`
+      return `http://${ip}:${remotePort}/remote${tokenQ}`
     })
-  }, [addresses, apiSettings.port, apiSettings.token])
+  }, [addresses, remotePort, apiSettings.token])
+
+  const lanUrls = useMemo(
+    () => remoteUrls.filter((url) => !url.includes('127.0.0.1')),
+    [remoteUrls],
+  )
 
   const phase = getPhase(state)
   const running = state.status === 'running' || state.status === 'overtime'
@@ -599,12 +699,16 @@ export function ControlApp(store: StoreApi) {
                   <input
                     type="checkbox"
                     checked={apiSettings.enabled}
-                    onChange={(e) =>
-                      store.setApiSettings({
+                    onChange={(e) => {
+                      const next = {
                         ...apiSettings,
                         enabled: e.target.checked,
-                      })
-                    }
+                      }
+                      setServerStatus((s) => ({ ...s, phase: 'starting' }))
+                      void Promise.resolve(store.setApiSettings(next)).then(
+                        applyServerResult,
+                      )
+                    }}
                   />
                   {t('apiEnabled')}
                 </label>
@@ -643,13 +747,42 @@ export function ControlApp(store: StoreApi) {
                 <button
                   type="button"
                   className="btn primary"
-                  onClick={() => void window.electronAPI?.setApiConfig(apiSettings)}
+                  onClick={() => void refreshApiStatus({ force: true })}
                 >
                   {t('restartServer')}
                 </button>
               </div>
 
+              <p
+                className={`server-status ${
+                  serverStatus.phase === 'ok'
+                    ? 'is-ok'
+                    : serverStatus.phase === 'error'
+                      ? 'is-error'
+                      : 'is-warn'
+                }`}
+              >
+                {serverStatus.phase === 'starting' && t('serverStatusStarting')}
+                {serverStatus.phase === 'ok' &&
+                  t('serverStatusListening', { port: serverStatus.port })}
+                {serverStatus.phase === 'stopped' && t('serverStatusStopped')}
+                {serverStatus.phase === 'error' &&
+                  t('serverStatusError', {
+                    error: serverStatus.error || 'unknown',
+                  })}
+                {serverStatus.phase === 'idle' && t('serverStatusStarting')}
+              </p>
+
               <div className="remote-urls">
+                <h3>{t('qrTitle')}</h3>
+                {!addresses.length && (
+                  <p className="hint">{t('noLanAddress')}</p>
+                )}
+                <div className="remote-qr-grid">
+                  {(lanUrls.length ? lanUrls : remoteUrls).map((url) => (
+                    <RemoteQr key={url} url={url} />
+                  ))}
+                </div>
                 <h3>{t('remoteUrls')}</h3>
                 {remoteUrls.map((url) => (
                   <code key={url}>{url}</code>

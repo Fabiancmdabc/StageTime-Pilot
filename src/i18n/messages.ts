@@ -88,7 +88,14 @@ export const de = {
   restartServer: 'Server neu starten',
   remoteUrls: 'Remote-URLs (WLAN / iPad)',
   remoteUrlsHint:
-    'Auf dem iPad dieselbe WLAN-Adresse im Safari öffnen. Live-Sync per WebSocket.',
+    'QR-Code mit dem iPad scannen oder die Adresse in Safari öffnen. Live-Sync per WebSocket.',
+  serverStatusListening: 'Server läuft auf Port {port}',
+  serverStatusStopped: 'Server gestoppt',
+  serverStatusError: 'Server-Fehler: {error}',
+  serverStatusStarting: 'Server startet…',
+  noLanAddress:
+    'Keine WLAN-/LAN-Adresse gefunden – nur localhost. Mac und iPad müssen im selben WLAN sein.',
+  qrTitle: 'QR-Code zum Öffnen',
 
   displaysTitle: 'Ausgabe · Displays',
   displaysHint:
@@ -242,7 +249,15 @@ export const en: Record<MessageKey, string> = {
   tokenPlaceholder: 'empty = no auth',
   restartServer: 'Restart server',
   remoteUrls: 'Remote URLs (Wi‑Fi / iPad)',
-  remoteUrlsHint: 'Open the same Wi‑Fi address in Safari on the iPad. Live sync via WebSocket.',
+  remoteUrlsHint:
+    'Scan the QR code with the iPad or open the address in Safari. Live sync via WebSocket.',
+  serverStatusListening: 'Server listening on port {port}',
+  serverStatusStopped: 'Server stopped',
+  serverStatusError: 'Server error: {error}',
+  serverStatusStarting: 'Starting server…',
+  noLanAddress:
+    'No Wi‑Fi/LAN address found – localhost only. Mac and iPad must share the same Wi‑Fi.',
+  qrTitle: 'QR code to open',
 
   displaysTitle: 'Output · Displays',
   displaysHint:

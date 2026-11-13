@@ -330,7 +330,7 @@ export function useTimerStore(options: { master?: boolean } = {}) {
   const setApiSettings = useCallback((next: ApiSettings) => {
     setApiSettingsState(next)
     persistApi(next)
-    void window.electronAPI?.setApiConfig(next)
+    return window.electronAPI?.setApiConfig(next)
   }, [])
 
   const applyApiCommand = useCallback(

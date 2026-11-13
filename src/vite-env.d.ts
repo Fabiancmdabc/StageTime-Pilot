@@ -43,12 +43,27 @@ interface StageTimeElectronAPI {
   ) => Promise<{ ok: boolean; displayIds: number[] }>
   onDisplaysChanged: (callback: (displays: DisplayInfo[]) => void) => () => void
   getLocalAddresses: () => Promise<string[]>
-  getApiInfo: () => Promise<{ port: number; token: string; enabled: boolean }>
+  getApiInfo: () => Promise<{
+    port: number
+    token: string
+    enabled: boolean
+    listening?: boolean
+    lastError?: string | null
+  }>
   setApiConfig: (config: {
     enabled: boolean
     port: number
     token: string
-  }) => Promise<{ ok: boolean; port?: number; error?: string }>
+    force?: boolean
+  }) => Promise<{
+    ok: boolean
+    port?: number
+    enabled?: boolean
+    listening?: boolean
+    error?: string
+    lastError?: string | null
+    skipped?: boolean
+  }>
   setOutputConfig: (config: import('./types').OutputConfig) => Promise<{
     ok: boolean
     status?: import('./types').OutputStatus
