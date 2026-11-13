@@ -15,6 +15,11 @@ exports.default = async function notarizing(context) {
   const appleIdPassword = process.env.APPLE_APP_SPECIFIC_PASSWORD;
   const teamId = process.env.APPLE_TEAM_ID;
 
+  if (process.env.SKIP_NOTARIZE === "1") {
+    console.log("[notarize] übersprungen – SKIP_NOTARIZE=1");
+    return;
+  }
+
   if (!appleId || !appleIdPassword || !teamId) {
     console.log(
       "[notarize] übersprungen – setze APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD und APPLE_TEAM_ID",
@@ -48,6 +53,14 @@ exports.default = async function notarizing(context) {
         await new Promise((r) => setTimeout(r, 5000 * attempt));
       }
     }
+  }
+  const msg = lastError?.message || String(lastError);
+  // Fehlende/abgelaufene Apple-Developer-Agreements blockieren Notary, nicht das Signieren.
+  if (/agreement/i.test(msg) || /HTTP status code: 403/.test(msg)) {
+    console.warn(
+      "[notarize] übersprungen – Apple Developer Agreement fehlt/abgelaufen. DMG bleibt Developer-ID-signiert, aber ohne Notarisierung.",
+    );
+    return;
   }
   throw lastError;
 };
