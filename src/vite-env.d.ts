@@ -43,7 +43,16 @@ interface StageTimeElectronAPI {
   ) => Promise<{ ok: boolean; displayIds: number[] }>
   onDisplaysChanged: (callback: (displays: DisplayInfo[]) => void) => () => void
   getLocalAddresses: () => Promise<
-    Array<{ address: string; iface: string; score: number; primary: boolean } | string>
+    | {
+        addresses: Array<{
+          address: string
+          iface: string
+          score: number
+          primary: boolean
+        }>
+        vpnActive: boolean
+      }
+    | Array<{ address: string; iface: string; score: number; primary: boolean } | string>
   >
   probeApi: () => Promise<{
     ok: boolean

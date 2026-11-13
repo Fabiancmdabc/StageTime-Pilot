@@ -102,6 +102,8 @@ export const de = {
   extraLanAddresses: 'Weitere Netz-Adressen (meist ignorieren)',
   firewallHint:
     'Falls das iPad nicht verbindet: Mac und iPad im selben WLAN, in macOS unter Datenschutz → Lokales Netzwerk StageTime-Pilot erlauben, Firewall-Hinweis bestätigen.',
+  vpnWarning:
+    'VPN am Mac erkannt — bitte VPN ausmachen. Sonst erreicht das Handy den Remote-Server oft nicht (weiße Seite / keine Verbindung).',
   qrTitle: 'QR-Code zum Öffnen',
 
   displaysTitle: 'Ausgabe · Displays',
@@ -271,6 +273,8 @@ export const en: Record<MessageKey, string> = {
   extraLanAddresses: 'Other network addresses (usually ignore)',
   firewallHint:
     'If the iPad cannot connect: same Wi‑Fi, allow StageTime-Pilot under Privacy → Local Network, and confirm any firewall prompt.',
+  vpnWarning:
+    'VPN detected on the Mac — turn VPN off. Otherwise the phone often cannot reach the remote server (white page / no connection).',
   qrTitle: 'QR code to open',
 
   displaysTitle: 'Output · Displays',

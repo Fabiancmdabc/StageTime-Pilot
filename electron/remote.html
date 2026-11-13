@@ -9,7 +9,7 @@
       html, body {
         margin: 0;
         height: 100%;
-        background: transparent;
+        background: #0b1220;
         color: #fff;
         font-family: "SF Pro Display", "Segoe UI", system-ui, sans-serif;
         overflow: hidden;
@@ -25,12 +25,15 @@
         align-items: center;
         padding: 4vw;
         box-sizing: border-box;
+        background: #0b1220;
       }
       #time {
         font-weight: 700;
         line-height: 1;
         letter-spacing: 0.04em;
         font-variant-numeric: tabular-nums;
+        font-size: 18vw;
+        color: #f4f7fb;
       }
       #msg {
         margin-top: 2vw;
@@ -42,26 +45,40 @@
         position: fixed;
         top: 10px;
         right: 12px;
+        left: 12px;
+        font-size: 13px;
+        opacity: 0.85;
+        text-align: right;
+      }
+      #hint {
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: 14px;
         font-size: 12px;
-        opacity: 0.45;
+        opacity: 0.55;
+        text-align: center;
       }
       .blink { animation: blink 1s step-end infinite; }
       @keyframes blink { 50% { opacity: 0.15; } }
     </style>
   </head>
   <body>
-    <div id="status">connecting…</div>
+    <div id="status">verbinde…</div>
     <div id="root">
       <div id="time">--:--</div>
       <div id="msg"></div>
     </div>
+    <div id="hint">StageTime Remote</div>
     <script>
       const elTime = document.getElementById('time')
       const elMsg = document.getElementById('msg')
       const elStatus = document.getElementById('status')
       const elRoot = document.getElementById('root')
+      const elHint = document.getElementById('hint')
       let state = null
       let clockTimer = null
+      let wsAttempts = 0
 
       function pad(n) { return String(n).padStart(2, '0') }
 
@@ -106,7 +123,7 @@
 
       function render() {
         if (!state) return
-        const v = state.visuals
+        const v = state.visuals || {}
         elRoot.style.background = v.backgroundColor || '#00b140'
         elRoot.style.justifyContent =
           v.verticalAlign === 'top' ? 'flex-start' : v.verticalAlign === 'bottom' ? 'flex-end' : 'center'
@@ -133,21 +150,51 @@
           elMsg.style.display = 'none'
           elMsg.textContent = ''
         }
+        elHint.style.display = 'none'
       }
 
       function apply(next) {
+        if (!next) return
         state = next
         render()
         if (clockTimer) clearInterval(clockTimer)
         clockTimer = setInterval(render, 200)
       }
 
+      async function pullStatus() {
+        try {
+          const token = new URLSearchParams(location.search).get('token')
+          const q = token ? ('?token=' + encodeURIComponent(token)) : ''
+          const res = await fetch('/api/status' + q, { cache: 'no-store' })
+          if (!res.ok) throw new Error('HTTP ' + res.status)
+          const data = await res.json()
+          if (data && data.state) {
+            apply(data.state)
+            elStatus.textContent = 'live (http)'
+            return true
+          }
+        } catch (err) {
+          elHint.textContent = 'Status-Abruf fehlgeschlagen: ' + (err && err.message ? err.message : err)
+        }
+        return false
+      }
+
       function connect() {
+        wsAttempts += 1
+        elStatus.textContent = 'verbinde… (' + wsAttempts + ')'
         const proto = location.protocol === 'https:' ? 'wss' : 'ws'
         const ws = new WebSocket(proto + '://' + location.host + '/ws')
-        ws.onopen = () => { elStatus.textContent = 'live' }
+        ws.onopen = () => {
+          elStatus.textContent = 'live'
+          // Falls noch kein State: einmal per HTTP nachladen
+          if (!state) void pullStatus()
+        }
+        ws.onerror = () => {
+          elStatus.textContent = 'ws-fehler'
+        }
         ws.onclose = () => {
           elStatus.textContent = 'reconnect…'
+          if (!state) void pullStatus()
           setTimeout(connect, 1200)
         }
         ws.onmessage = (ev) => {
@@ -158,7 +205,9 @@
         }
       }
 
-      connect()
+      // Sichtbarer Startzustand + sofort HTTP, dann WebSocket
+      elHint.textContent = 'Warte auf Timer-State vom Mac… (VPN am Mac bitte aus)'
+      void pullStatus().finally(() => connect())
     </script>
   </body>
 </html>

@@ -377,6 +377,18 @@ function scoreLocalIface(iface, address) {
   return score
 }
 
+function detectVpnActive() {
+  const nets = os.networkInterfaces()
+  for (const iface of Object.keys(nets)) {
+    const lower = iface.toLowerCase()
+    if (/^(utun|ipsec|ppp|tailscale|zt)/i.test(lower)) {
+      const entries = nets[iface] ?? []
+      if (entries.some((net) => !net.internal)) return true
+    }
+  }
+  return false
+}
+
 /** Bevorzugt die echte WLAN-/LAN-Adresse (meist en0), filtert VPN/Bridge/Link-Local. */
 function getLocalAddresses() {
   const nets = os.networkInterfaces()
@@ -413,7 +425,7 @@ function getLocalAddresses() {
       }
     }
   }
-  return unique
+  return { addresses: unique, vpnActive: detectVpnActive() }
 }
 
 ipcMain.handle('get-displays', async () => listDisplays())

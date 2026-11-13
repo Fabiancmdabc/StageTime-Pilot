@@ -159,6 +159,9 @@ export function useTimerStore(options: { master?: boolean } = {}) {
 
   useEffect(() => {
     if (!master) return
+    // Sofort an Electron/Remote pushen — sonst bleibt das Handy weiß (kein State).
+    emit(publicState(masterState), true)
+    let idleBeat = 0
     const tick = () => {
       if (masterState.status === 'running' || masterState.status === 'overtime') {
         const next = publicState(masterState)
@@ -169,6 +172,10 @@ export function useTimerStore(options: { master?: boolean } = {}) {
         }
       } else if (masterState.mode === 'clock') {
         emit({ ...masterState, updatedAt: Date.now() }, true)
+      } else {
+        // Idle: alle ~2s syncen, damit späte Remote-Clients nicht leer bleiben
+        idleBeat += 1
+        if (idleBeat % 10 === 0) emit(publicState(masterState), true)
       }
     }
     tickRef.current = window.setInterval(tick, 200)

@@ -114,6 +114,7 @@ export function ControlApp(store: StoreApi) {
   const [lanHosts, setLanHosts] = useState<
     Array<{ address: string; iface: string; primary: boolean }>
   >([])
+  const [vpnActive, setVpnActive] = useState(false)
   const [serverStatus, setServerStatus] = useState<{
     phase: 'idle' | 'starting' | 'ok' | 'stopped' | 'error'
     port: number
@@ -121,8 +122,20 @@ export function ControlApp(store: StoreApi) {
   }>({ phase: 'idle', port: apiSettings.port })
 
   const ingestAddresses = (
-    list?: Array<{ address: string; iface: string; score?: number; primary: boolean } | string>,
+    payload?:
+      | {
+          addresses: Array<{
+            address: string
+            iface: string
+            score?: number
+            primary: boolean
+          }>
+          vpnActive?: boolean
+        }
+      | Array<{ address: string; iface: string; score?: number; primary: boolean } | string>,
   ) => {
+    const list = Array.isArray(payload) ? payload : payload?.addresses
+    setVpnActive(Boolean(!Array.isArray(payload) && payload?.vpnActive))
     if (!list?.length) {
       setLanHosts([])
       return
@@ -879,6 +892,9 @@ export function ControlApp(store: StoreApi) {
                   </details>
                 )}
                 <p className="hint">{t('remoteUrlsHint')}</p>
+                {vpnActive && (
+                  <p className="server-status is-warn">{t('vpnWarning')}</p>
+                )}
                 <p className="hint">{t('firewallHint')}</p>
               </div>
             </section>
